@@ -40,5 +40,18 @@
         "amount": 1500000
       }
     ]
+  },
+  "liabilities": {
+    "current": [
+      {"name": "Accounts payable", "amount": 1380000},
+      {"name": "Short-term debt", "amount": 720000},
+      {"name": "Accrued expenses", "amount": 450000},
+      {"name": "Taxes payable", "amount": 210000}
+    ],
+    "non_current": [
+      {"name": "Long-term debt", "amount": 4200000},
+      {"name": "Lease liabilities", "amount": 980000},
+      {"name": "Deferred tax liabilities", "amount": 310000}
+    ]
   }
 }

@@ -1,6 +1,6 @@
 # PlantUML architecture diagrams
 
-These diagrams describe the implemented Asset Report Generator at two matching levels. Package diagrams show the real Python packages, modules, and imports. Class diagrams expand those modules into their current constructors, public methods, important private helpers, protocols, dataclasses, compositions, and collaborations.
+These diagrams describe the implemented Financial Position Report Generator, including assets and liabilities, at two matching levels. Package diagrams show the real Python packages, modules, and imports. Class diagrams expand those modules into their current constructors, public methods, important private helpers, protocols, dataclasses, compositions, and collaborations.
 
 ## Diagram set
 

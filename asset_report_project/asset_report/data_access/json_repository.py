@@ -8,9 +8,11 @@ from typing import Any
 
 from ..domain.models import (
     AssetItem,
-    AssetReportData,
     AssetStatement,
     Company,
+    FinancialStatementData,
+    LiabilityItem,
+    LiabilityStatement,
     Money,
     ReportingPeriod,
 )
@@ -47,14 +49,16 @@ class DataStandardizer:
             value = standardized.get(key)
             if isinstance(value, str):
                 standardized[key] = value.strip()
-        assets = standardized.get("assets")
-        if isinstance(assets, dict):
-            assets = dict(assets)
+        for statement_name in ("assets", "liabilities"):
+            statement = standardized.get(statement_name)
+            if not isinstance(statement, dict):
+                continue
+            statement = dict(statement)
             for section in ("current", "non_current"):
-                items = assets.get(section)
+                items = statement.get(section)
                 if isinstance(items, list):
-                    assets[section] = [self._standardize_item(item) for item in items]
-            standardized["assets"] = assets
+                    statement[section] = [self._standardize_item(item) for item in items]
+            standardized[statement_name] = statement
         return standardized
 
     @staticmethod
@@ -83,24 +87,36 @@ class FinancialDataValidator:
         if ticker is not None and not isinstance(ticker, str):
             raise DataValidationError("'ticker' must be a string when provided")
 
-        assets = data["assets"]
-        if not isinstance(assets, dict):
-            raise DataValidationError("'assets' must be an object")
-        for section in ("current", "non_current"):
-            if section not in assets:
-                raise DataValidationError(f"Missing required asset section: assets.{section}")
-            if not isinstance(assets[section], list):
-                raise DataValidationError(f"'assets.{section}' must be an array")
-            self._validate_items(assets[section], section)
+        self._validate_statement(data["assets"], "assets", require_item=True)
 
-        if not assets["current"] and not assets["non_current"]:
+        liabilities = data.get("liabilities")
+        if liabilities is not None:
+            self._validate_statement(liabilities, "liabilities", require_item=False)
+
+    def _validate_statement(
+        self, statement: object, statement_name: str, require_item: bool
+    ) -> None:
+        if not isinstance(statement, dict):
+            raise DataValidationError(f"'{statement_name}' must be an object")
+        for section in ("current", "non_current"):
+            if section not in statement:
+                raise DataValidationError(
+                    f"Missing required {statement_name} section: {statement_name}.{section}"
+                )
+            if not isinstance(statement[section], list):
+                raise DataValidationError(f"'{statement_name}.{section}' must be an array")
+            self._validate_items(statement[section], statement_name, section)
+
+        if require_item and not statement["current"] and not statement["non_current"]:
             raise DataValidationError("At least one asset item is required")
 
     @staticmethod
-    def _validate_items(items: list[object], section: str) -> None:
+    def _validate_items(
+        items: list[object], statement_name: str, section: str
+    ) -> None:
         seen_names: set[str] = set()
         for index, item in enumerate(items):
-            location = f"assets.{section}[{index}]"
+            location = f"{statement_name}.{section}[{index}]"
             if not isinstance(item, dict):
                 raise DataValidationError(f"'{location}' must be an object")
             if not isinstance(item.get("name"), str) or not item["name"]:
@@ -108,7 +124,7 @@ class FinancialDataValidator:
             normalized_name = item["name"].casefold()
             if normalized_name in seen_names:
                 raise DataValidationError(
-                    f"Duplicate asset name in assets.{section}: {item['name']}"
+                    f"Duplicate item name in {statement_name}.{section}: {item['name']}"
                 )
             seen_names.add(normalized_name)
             if "amount" not in item:
@@ -119,24 +135,43 @@ class FinancialDataValidator:
                 raise DataValidationError(f"Invalid '{location}.amount': {exc}") from exc
 
 
-class AssetStatementMapper:
-    def map(self, data: dict[str, Any]) -> AssetReportData:
+class FinancialStatementMapper:
+    def map(self, data: dict[str, Any]) -> FinancialStatementData:
         assets = data["assets"]
-        current = tuple(self._map_item(item) for item in assets["current"])
-        non_current = tuple(self._map_item(item) for item in assets["non_current"])
-        return AssetReportData(
+        liabilities = data.get("liabilities", {"current": [], "non_current": []})
+        current_assets = tuple(self._map_asset(item) for item in assets["current"])
+        non_current_assets = tuple(
+            self._map_asset(item) for item in assets["non_current"]
+        )
+        current_liabilities = tuple(
+            self._map_liability(item) for item in liabilities["current"]
+        )
+        non_current_liabilities = tuple(
+            self._map_liability(item) for item in liabilities["non_current"]
+        )
+        return FinancialStatementData(
             company=Company(
                 name=data["company"],
                 ticker=data.get("ticker"),
                 currency=data["currency"],
                 reporting_period=ReportingPeriod(data["reporting_period"]),
             ),
-            statement=AssetStatement.create(current, non_current),
+            assets=AssetStatement.create(current_assets, non_current_assets),
+            liabilities=LiabilityStatement.create(
+                current_liabilities, non_current_liabilities
+            ),
         )
 
     @staticmethod
-    def _map_item(item: dict[str, Any]) -> AssetItem:
+    def _map_asset(item: dict[str, Any]) -> AssetItem:
         return AssetItem(name=item["name"], amount=Money.from_value(item["amount"]))
+
+    @staticmethod
+    def _map_liability(item: dict[str, Any]) -> LiabilityItem:
+        return LiabilityItem(name=item["name"], amount=Money.from_value(item["amount"]))
+
+
+AssetStatementMapper = FinancialStatementMapper
 
 
 class JSONFinancialStatementRepository:
@@ -147,9 +182,9 @@ class JSONFinancialStatementRepository:
         self.reader = JSONReader()
         self.standardizer = DataStandardizer()
         self.validator = FinancialDataValidator()
-        self.mapper = AssetStatementMapper()
+        self.mapper = FinancialStatementMapper()
 
-    def load(self) -> AssetReportData:
+    def load(self) -> FinancialStatementData:
         data = self.standardizer.standardize(self.reader.read(self.path))
         self.validator.validate(data)
         return self.mapper.map(data)

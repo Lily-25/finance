@@ -1,6 +1,6 @@
 @startuml OutputLayerClasses
 
-title Asset Report Generator - Output Layer Classes
+title Financial Position Report Generator - Output Layer Classes
 top to bottom direction
 
 skinparam backgroundColor #FFFFFF
@@ -17,14 +17,14 @@ package "Visualization\nasset_report.output.charts" #EEE5FA {
   }
 
   interface ChartGenerator <<abstract>> {
-    + generate(result: AssetAnalysisResult): tuple(Chart)
+    + generate(result: FinancialAnalysisResult): tuple(Chart)
   }
 
-  class AssetCharts {
-    + generate(result: AssetAnalysisResult): tuple(Chart)
-    - _structure_donut(result): str
+  class FinancialCharts {
+    + generate(result: FinancialAnalysisResult): tuple(Chart)
+    - _structure_donut(title, total_label, amounts, percentages, currency, labels): str
     - _horizontal_bars(metrics, title, percentage_basis): str
-    - _empty_chart(title: str): str
+    - _empty_chart(title: str, message: str): str
     - _legend_row(x, y, color, label, value): str
     - {static} _percent(value: Decimal): str
     - {static} _amount(value: Decimal): str
@@ -33,7 +33,7 @@ package "Visualization\nasset_report.output.charts" #EEE5FA {
 
 package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
   class NarrativeGenerator {
-    + generate(result: AssetAnalysisResult): tuple(str)
+    + generate(result: FinancialAnalysisResult): tuple(str)
   }
 
   class ReportTemplate {
@@ -48,7 +48,9 @@ package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
     + build(result, charts, report_title = None): str
     - {static} _kpis(result): str
     - {static} _chart_card(chart: Chart): str
-    - {static} _table(result): str
+    - _asset_table(result): str
+    - _liability_table(result): str
+    - {static} _metric_rows(metrics, currency, percentage_field): list(str)
   }
 
   class ReportFileExporter {
@@ -57,27 +59,27 @@ package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
 }
 
 package "Business Logic Layer" #E2F3E7 {
-  class AssetAnalysisResult
-  class AssetMetric
+  class FinancialAnalysisResult
+  class FinancialMetric
 }
 
-AssetCharts ..|> ChartGenerator
-AssetCharts ..> AssetAnalysisResult : consumes
-AssetCharts ..> AssetMetric : visualizes
-AssetCharts ..> Chart : creates four
+FinancialCharts ..|> ChartGenerator
+FinancialCharts ..> FinancialAnalysisResult : consumes
+FinancialCharts ..> FinancialMetric : visualizes
+FinancialCharts ..> Chart : creates four
 
-NarrativeGenerator ..> AssetAnalysisResult : interprets
+NarrativeGenerator ..> FinancialAnalysisResult : interprets
 ReportBuilder *-- NarrativeGenerator
 ReportBuilder *-- ReportTemplate
-ReportBuilder ..> AssetAnalysisResult : summarizes
+ReportBuilder ..> FinancialAnalysisResult : summarizes
 ReportBuilder ..> Chart : embeds SVG
 
-note right of AssetCharts
+note right of FinancialCharts
   Produces four inline, accessible SVGs:
   1. Asset structure donut
-  2. Current asset composition
-  3. Non-current asset composition
-  4. Largest asset categories
+  2. Liability structure donut
+  3. Largest asset categories
+  4. Largest liability categories
 end note
 
 note right of ReportFileExporter

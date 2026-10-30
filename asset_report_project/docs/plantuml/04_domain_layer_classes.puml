@@ -1,6 +1,6 @@
 @startuml DomainLayerClasses
 
-title Asset Report Generator - Expanded Domain Layer Classes
+title Financial Position Report Generator - Domain Layer Classes
 top to bottom direction
 
 skinparam backgroundColor #FFFFFF
@@ -97,9 +97,11 @@ package "Domain Models\nasset_report.domain.models" #E3F0F8 {
     + {static} create(current_liabilities, non_current_liabilities): LiabilityStatement
   }
 
-  class AssetReportData <<frozen aggregate>> {
+  class FinancialStatementData <<frozen aggregate>> {
     + company: Company
-    + statement: AssetStatement
+    + assets: AssetStatement
+    + liabilities: LiabilityStatement
+    + statement: AssetStatement {property}
     + currency: str {property}
     + reporting_period: ReportingPeriod {property}
   }
@@ -107,20 +109,21 @@ package "Domain Models\nasset_report.domain.models" #E3F0F8 {
 
 package "Repository Contracts\nasset_report.domain.repositories" #EAF4FA {
   interface FinancialStatementRepository <<Protocol>> {
-    + load(): AssetReportData
+    + load(): FinancialStatementData
   }
 }
 
 Company *-- "1" ReportingPeriod
-AssetReportData *-- "1" Company
-AssetReportData *-- "1" AssetStatement
+FinancialStatementData *-- "1" Company
+FinancialStatementData *-- "1" AssetStatement
+FinancialStatementData *-- "1" LiabilityStatement
 AssetStatement *-- "21" Money : standard line items
 AssetStatement *-- "0..*" AssetItem : additional lines
 AssetItem *-- "1" Money
 LiabilityStatement *-- "16" Money : standard line items
 LiabilityStatement *-- "0..*" LiabilityItem : additional lines
 LiabilityItem *-- "1" Money
-FinancialStatementRepository ..> AssetReportData : returns
+FinancialStatementRepository ..> FinancialStatementData : returns
 
 note right of AssetStatement
   Every standard line item defaults to Money.zero().
@@ -128,7 +131,7 @@ note right of AssetStatement
   Unknown line items are preserved as additional items.
 end note
 
-note bottom of LiabilityStatement
+note right of LiabilityStatement
   Every standard line item defaults to Money.zero().
   Totals and percentages are safe when all values are zero.
 end note

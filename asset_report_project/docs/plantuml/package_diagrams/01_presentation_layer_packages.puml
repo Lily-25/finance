@@ -1,6 +1,6 @@
 @startuml PresentationLayerPackages
 
-title Asset Report Generator - Presentation Layer Packages
+title Financial Position Report Generator - Presentation Layer Packages
 left to right direction
 
 skinparam backgroundColor #FFFFFF

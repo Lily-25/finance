@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..business.analysis import AssetAnalysisService
+from ..business.analysis import FinancialAnalysisService
 from ..domain.repositories import FinancialStatementRepository
 from ..output.charts import ChartGenerator
 from ..output.reporting import ReportBuilder, ReportFileExporter
 
 
-class GenerateAssetReport:
+class GenerateFinancialReport:
     def __init__(
         self,
-        analysis_service: AssetAnalysisService,
+        analysis_service: FinancialAnalysisService,
         chart_generator: ChartGenerator,
         report_builder: ReportBuilder,
         exporter: ReportFileExporter,
@@ -33,6 +33,10 @@ class GenerateAssetReport:
         result = self.analysis_service.analyze(data)
         charts = self.chart_generator.generate(result)
         if len(charts) != 4:
-            raise RuntimeError("Asset reports require exactly four charts")
+            raise RuntimeError("Financial reports require exactly four charts")
         html = self.report_builder.build(result, charts, report_title)
         return self.exporter.export(html, destination)
+
+
+class GenerateAssetReport(GenerateFinancialReport):
+    """Backward-compatible use-case name."""

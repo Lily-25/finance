@@ -1,6 +1,6 @@
 @startuml DataAccessLayerPackages
 
-title Asset Report Generator - Data Access Layer Packages
+title Financial Position Report Generator - Data Access Layer Packages
 left to right direction
 
 skinparam backgroundColor #FFFFFF
@@ -26,6 +26,7 @@ JSONRepositoryModule ..> RepositoriesModule : structural implementation
 note bottom of DataAccess
   json_repository.py contains the complete
   read -> standardize -> validate -> map pipeline.
+  Both asset and liability sections use the same pipeline.
 
   JSONFinancialStatementRepository satisfies the
   repository protocol by structural typing.

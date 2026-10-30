@@ -1,4 +1,4 @@
-"""Narrative, HTML composition, and file export for asset reports."""
+"""Narrative, HTML composition, and file export for financial reports."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from decimal import Decimal
 from html import escape
 from pathlib import Path
 
-from ..business.analysis import AssetAnalysisResult, AssetMetric
+from ..business.analysis import FinancialAnalysisResult, FinancialMetric
 from .charts import Chart
 
 
@@ -18,71 +18,62 @@ def format_money(currency: str, value: Decimal) -> str:
 class NarrativeGenerator:
     """Generate concise observations strictly from calculated report data."""
 
-    def generate(self, result: AssetAnalysisResult) -> tuple[str, ...]:
+    def generate(self, result: FinancialAnalysisResult) -> tuple[str, ...]:
         currency = result.data.currency
+        structure = self._asset_structure(result)
+
+        largest_asset = result.all_asset_metrics[0]
+        asset_concentration = (
+            f"The largest asset line is {largest_asset.name}, at "
+            f"{format_money(currency, largest_asset.amount.amount)} "
+            f"({largest_asset.percentage_of_statement:.1f}% of total assets)."
+        )
+
+        if result.all_liability_metrics:
+            largest_liability = result.all_liability_metrics[0]
+            liability_structure = (
+                f"Current liabilities represent "
+                f"{result.current_liabilities_percentage:.1f}% of total liabilities; "
+                f"the largest liability line is {largest_liability.name} at "
+                f"{format_money(currency, largest_liability.amount.amount)} "
+                f"({largest_liability.percentage_of_statement:.1f}% of liabilities)."
+            )
+        else:
+            liability_structure = "No liabilities were reported for this period."
+
+        ratio_text = (
+            f"the current ratio is {result.current_ratio:.2f}:1"
+            if result.current_ratio is not None
+            else "the current ratio is not applicable because current liabilities are zero"
+        )
+        position = (
+            f"Total liabilities equal {result.liability_to_assets_percentage:.1f}% of assets, "
+            f"leaving net assets of {format_money(currency, result.net_assets)}; {ratio_text}."
+        )
+        return structure, asset_concentration, liability_structure, position
+
+    @staticmethod
+    def _asset_structure(result: FinancialAnalysisResult) -> str:
         if abs(result.current_percentage - result.non_current_percentage) < Decimal("5"):
-            structure = (
+            return (
                 f"The asset base is broadly balanced: current assets are "
                 f"{result.current_percentage:.1f}% and non-current assets are "
                 f"{result.non_current_percentage:.1f}% of the total."
             )
+        if result.non_current_percentage > result.current_percentage:
+            larger_name = "Non-current assets"
+            larger_pct = result.non_current_percentage
+            smaller_name = "current assets"
+            smaller_pct = result.current_percentage
         else:
-            larger_name, larger_pct, smaller_name, smaller_pct = (
-                (
-                    "Non-current assets",
-                    result.non_current_percentage,
-                    "current assets",
-                    result.current_percentage,
-                )
-                if result.non_current_percentage > result.current_percentage
-                else (
-                    "Current assets",
-                    result.current_percentage,
-                    "non-current assets",
-                    result.non_current_percentage,
-                )
-            )
-            structure = (
-                f"{larger_name} represent {larger_pct:.1f}% of total assets, compared "
-                f"with {smaller_pct:.1f}% for {smaller_name}."
-            )
-
-        ranked = result.all_metrics
-        largest = ranked[0]
-        top_count = min(3, len(ranked))
-        top_total = sum(
-            (metric.amount.amount for metric in ranked[:top_count]), Decimal("0")
+            larger_name = "Current assets"
+            larger_pct = result.current_percentage
+            smaller_name = "non-current assets"
+            smaller_pct = result.non_current_percentage
+        return (
+            f"{larger_name} represent {larger_pct:.1f}% of total assets, compared "
+            f"with {smaller_pct:.1f}% for {smaller_name}."
         )
-        top_pct = (top_total / result.total_assets.amount) * Decimal("100")
-        concentration_label = {
-            1: "the largest item",
-            2: "the two largest items",
-            3: "the three largest items",
-        }[top_count]
-        concentration_verb = "accounts" if top_count == 1 else "account"
-        concentration = (
-            f"The largest line item is {largest.name}, at "
-            f"{format_money(currency, largest.amount.amount)} "
-            f"({largest.percentage_of_total:.1f}% of total assets); {concentration_label} "
-            f"{concentration_verb} for {top_pct:.1f}%."
-        )
-
-        composition_parts: list[str] = []
-        if result.current_metrics:
-            current = result.current_metrics[0]
-            composition_parts.append(
-                f"Within current assets, {current.name} is the largest component "
-                f"at {current.percentage_of_class:.1f}%"
-            )
-        if result.non_current_metrics:
-            non_current = result.non_current_metrics[0]
-            composition_parts.append(
-                f"within non-current assets, {non_current.name} leads at "
-                f"{non_current.percentage_of_class:.1f}%"
-            )
-        composition = "; ".join(composition_parts) + "."
-        composition = composition[0].upper() + composition[1:]
-        return structure, concentration, composition
 
 
 class ReportTemplate:
@@ -132,15 +123,15 @@ h1 { max-width: 760px; margin: 0; font-size: clamp(34px, 5vw, 58px); line-height
 .hero-meta strong { color: white; }
 .section { margin-top: 26px; }
 .section-heading { margin: 0 0 14px; font-size: 21px; letter-spacing: -.02em; }
-.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: -18px; position: relative; padding: 0 22px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: -18px; position: relative; padding: 0 22px; }
 .kpi, .panel, .chart-card {
   background: var(--surface);
   border: 1px solid rgba(229,234,242,.9);
   box-shadow: 0 12px 36px rgba(23,32,51,.065);
 }
-.kpi { min-width: 0; padding: 23px 24px; border-radius: 16px; }
+.kpi { min-width: 0; padding: 22px; border-radius: 16px; }
 .kpi-label { color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
-.kpi-value { display: block; margin-top: 8px; font-size: clamp(21px, 2.5vw, 30px); font-weight: 780; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.kpi-value { display: block; margin-top: 8px; font-size: clamp(19px, 2.2vw, 28px); font-weight: 780; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .kpi-note { display: block; color: var(--muted); margin-top: 3px; font-size: 13px; }
 .panel { border-radius: 18px; padding: 27px 30px; }
 .insights { margin: 0; padding: 0; list-style: none; display: grid; gap: 17px; }
@@ -170,7 +161,10 @@ tr:last-child td { border-bottom: 0; }
 .badge.non-current { background: #f3efff; color: #6d28d9; }
 .total-row td { background: #f8fafc; font-weight: 780; }
 .footer { color: var(--muted); text-align: center; font-size: 12px; margin-top: 26px; }
-@media (max-width: 820px) {
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
   .report { width: min(100% - 24px, 1180px); margin-top: 12px; }
   .hero { padding: 36px 28px 48px; border-radius: 18px; }
   .kpis { grid-template-columns: 1fr; margin-top: -26px; }
@@ -190,7 +184,7 @@ tr:last-child td { border-bottom: 0; }
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Asset composition and concentration report">
+  <meta name="description" content="Asset, liability, liquidity, and leverage report">
   <title>{escape(title)}</title>
   <style>{self.CSS}</style>
 </head>
@@ -210,12 +204,12 @@ class ReportBuilder:
 
     def build(
         self,
-        result: AssetAnalysisResult,
+        result: FinancialAnalysisResult,
         charts: tuple[Chart, ...],
         report_title: str | None = None,
     ) -> str:
         data = result.data
-        title = report_title or f"{data.company.name} — Asset Report"
+        title = report_title or f"{data.company.name} — Financial Position Report"
         generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         narratives = self.narrative_generator.generate(result)
         ticker_meta = (
@@ -225,7 +219,7 @@ class ReportBuilder:
         )
         body = f"""<main class="report">
   <header class="hero">
-    <p class="eyebrow">Financial analysis · Asset report</p>
+    <p class="eyebrow">Financial analysis · Statement of financial position</p>
     <h1>{escape(data.company.name)}</h1>
     <div class="hero-meta">
       <span><strong>Period</strong> · {escape(data.reporting_period.label)}</span>
@@ -242,21 +236,31 @@ class ReportBuilder:
     <h2 id="visual-heading" class="section-heading">Visual analysis</h2>
     <div class="chart-grid">{''.join(self._chart_card(chart) for chart in charts)}</div>
   </section>
-  <section class="section" aria-labelledby="detail-heading">
-    <h2 id="detail-heading" class="section-heading">Asset detail</h2>
-    <div class="panel table-wrap">{self._table(result)}</div>
+  <section class="section" aria-labelledby="asset-detail-heading">
+    <h2 id="asset-detail-heading" class="section-heading">Asset detail</h2>
+    <div class="panel table-wrap">{self._asset_table(result)}</div>
+  </section>
+  <section class="section" aria-labelledby="liability-detail-heading">
+    <h2 id="liability-detail-heading" class="section-heading">Liability detail</h2>
+    <div class="panel table-wrap">{self._liability_table(result)}</div>
   </section>
   <footer class="footer">Generated {generated} · Amounts shown in {escape(data.currency)}</footer>
 </main>"""
         return self.template.render(title, body)
 
     @staticmethod
-    def _kpis(result: AssetAnalysisResult) -> str:
+    def _kpis(result: FinancialAnalysisResult) -> str:
         currency = escape(result.data.currency)
+        ratio = (
+            f"{result.current_ratio:.2f}:1"
+            if result.current_ratio is not None
+            else "Not applicable"
+        )
         return f"""<section class="kpis" aria-label="Key totals">
   <div class="kpi"><span class="kpi-label">Total assets</span><strong class="kpi-value">{currency} {result.total_assets.amount:,.2f}</strong><span class="kpi-note">100.0% of reported assets</span></div>
-  <div class="kpi"><span class="kpi-label">Current assets</span><strong class="kpi-value">{currency} {result.current_total.amount:,.2f}</strong><span class="kpi-note">{result.current_percentage:.1f}% of total assets</span></div>
-  <div class="kpi"><span class="kpi-label">Non-current assets</span><strong class="kpi-value">{currency} {result.non_current_total.amount:,.2f}</strong><span class="kpi-note">{result.non_current_percentage:.1f}% of total assets</span></div>
+  <div class="kpi"><span class="kpi-label">Total liabilities</span><strong class="kpi-value">{currency} {result.total_liabilities.amount:,.2f}</strong><span class="kpi-note">{result.liability_to_assets_percentage:.1f}% of total assets</span></div>
+  <div class="kpi"><span class="kpi-label">Net assets</span><strong class="kpi-value">{currency} {result.net_assets:,.2f}</strong><span class="kpi-note">Assets less liabilities</span></div>
+  <div class="kpi"><span class="kpi-label">Current ratio</span><strong class="kpi-value">{ratio}</strong><span class="kpi-note">Current assets / current liabilities</span></div>
 </section>"""
 
     @staticmethod
@@ -266,26 +270,66 @@ class ReportBuilder:
   <div class="chart-frame">{chart.svg}</div>
 </article>"""
 
-    @staticmethod
-    def _table(result: AssetAnalysisResult) -> str:
-        rows: list[str] = []
-        for metric in result.all_metrics:
-            badge_class = "non-current" if metric.classification == "Non-current" else ""
-            rows.append(
-                f"""<tr>
-  <td>{escape(metric.name)}</td>
-  <td><span class="badge {badge_class}">{escape(metric.classification)}</span></td>
-  <td class="number">{escape(result.data.currency)} {metric.amount.amount:,.2f}</td>
-  <td class="number">{metric.percentage_of_total:.1f}%</td>
-</tr>"""
-            )
+    @classmethod
+    def _asset_table(cls, result: FinancialAnalysisResult) -> str:
+        rows = cls._metric_rows(
+            result.all_asset_metrics,
+            result.data.currency,
+            "percentage_of_statement",
+        )
         rows.append(
             f"""<tr class="total-row"><td>Total assets</td><td>—</td><td class="number">{escape(result.data.currency)} {result.total_assets.amount:,.2f}</td><td class="number">100.0%</td></tr>"""
         )
         return f"""<table>
-  <thead><tr><th>Asset</th><th>Classification</th><th class="number">Amount</th><th class="number">% of total</th></tr></thead>
+  <thead><tr><th>Asset</th><th>Classification</th><th class="number">Amount</th><th class="number">% of assets</th></tr></thead>
   <tbody>{''.join(rows)}</tbody>
 </table>"""
+
+    @classmethod
+    def _liability_table(cls, result: FinancialAnalysisResult) -> str:
+        rows = cls._metric_rows(
+            result.all_liability_metrics,
+            result.data.currency,
+            "percentage_of_statement",
+            include_assets_percentage=True,
+        )
+        if not rows:
+            rows.append(
+                '<tr><td colspan="5">No liabilities reported.</td></tr>'
+            )
+        rows.append(
+            f"""<tr class="total-row"><td>Total liabilities</td><td>—</td><td class="number">{escape(result.data.currency)} {result.total_liabilities.amount:,.2f}</td><td class="number">{('100.0%' if result.total_liabilities.amount else '0.0%')}</td><td class="number">{result.liability_to_assets_percentage:.1f}%</td></tr>"""
+        )
+        return f"""<table>
+  <thead><tr><th>Liability</th><th>Classification</th><th class="number">Amount</th><th class="number">% of liabilities</th><th class="number">% of assets</th></tr></thead>
+  <tbody>{''.join(rows)}</tbody>
+</table>"""
+
+    @staticmethod
+    def _metric_rows(
+        metrics: tuple[FinancialMetric, ...],
+        currency: str,
+        percentage_field: str,
+        include_assets_percentage: bool = False,
+    ) -> list[str]:
+        rows: list[str] = []
+        for metric in metrics:
+            badge_class = "non-current" if metric.classification == "Non-current" else ""
+            assets_cell = (
+                f'<td class="number">{metric.percentage_of_assets:.1f}%</td>'
+                if include_assets_percentage
+                else ""
+            )
+            percentage = getattr(metric, percentage_field)
+            rows.append(
+                f"""<tr>
+  <td>{escape(metric.name)}</td>
+  <td><span class="badge {badge_class}">{escape(metric.classification)}</span></td>
+  <td class="number">{escape(currency)} {metric.amount.amount:,.2f}</td>
+  <td class="number">{percentage:.1f}%</td>{assets_cell}
+</tr>"""
+            )
+        return rows
 
 
 class ReportFileExporter:

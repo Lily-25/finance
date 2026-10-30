@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Asset, liability, liquidity, and leverage report">
+  <title>Northstar Manufacturing Ltd. — Financial Position Report</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #172033;
+  --muted: #64748b;
+  --line: #e5eaf2;
+  --surface: #ffffff;
+  --canvas: #f4f7fb;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--canvas);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.report { width: min(1180px, calc(100% - 40px)); margin: 34px auto 56px; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 48px 52px;
+  border-radius: 24px;
+  color: white;
+  background: linear-gradient(125deg, #14213d 0%, #243b6b 58%, #4338ca 100%);
+  box-shadow: 0 24px 70px rgba(20, 33, 61, .18);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -110px;
+  top: -150px;
+  border: 56px solid rgba(255,255,255,.09);
+  border-radius: 50%;
+}
+.eyebrow { margin: 0 0 10px; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 750; opacity: .78; }
+h1 { max-width: 760px; margin: 0; font-size: clamp(34px, 5vw, 58px); line-height: 1.04; letter-spacing: -.045em; }
+.hero-meta { display: flex; gap: 18px 32px; flex-wrap: wrap; margin-top: 24px; color: rgba(255,255,255,.82); }
+.hero-meta strong { color: white; }
+.section { margin-top: 26px; }
+.section-heading { margin: 0 0 14px; font-size: 21px; letter-spacing: -.02em; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: -18px; position: relative; padding: 0 22px; }
+.kpi, .panel, .chart-card {
+  background: var(--surface);
+  border: 1px solid rgba(229,234,242,.9);
+  box-shadow: 0 12px 36px rgba(23,32,51,.065);
+}
+.kpi { min-width: 0; padding: 22px; border-radius: 16px; }
+.kpi-label { color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.kpi-value { display: block; margin-top: 8px; font-size: clamp(19px, 2.2vw, 28px); font-weight: 780; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.kpi-note { display: block; color: var(--muted); margin-top: 3px; font-size: 13px; }
+.panel { border-radius: 18px; padding: 27px 30px; }
+.insights { margin: 0; padding: 0; list-style: none; display: grid; gap: 17px; }
+.insights li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+.insights li::before { content: ""; width: 10px; height: 10px; margin-top: 7px; border-radius: 3px; background: linear-gradient(135deg, var(--blue), var(--purple)); }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+.chart-card { overflow: hidden; border-radius: 18px; }
+.chart-copy { padding: 24px 26px 6px; }
+.chart-copy h3 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+.chart-copy p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.chart-frame { padding: 6px 16px 18px; overflow-x: auto; }
+.chart-svg { display: block; width: 100%; min-width: 540px; height: auto; }
+.svg-kicker, .svg-note, .svg-label, .svg-value, .svg-value-sm, .svg-number { font-family: inherit; fill: var(--ink); }
+.svg-kicker { font-size: 11px; fill: var(--muted); font-weight: 700; letter-spacing: .08em; }
+.svg-value { font-size: 17px; font-weight: 750; }
+.svg-value-sm { font-size: 19px; font-weight: 750; }
+.svg-label { font-size: 13px; font-weight: 650; }
+.svg-number { font-size: 13px; font-weight: 760; }
+.svg-note { font-size: 11px; fill: var(--muted); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { padding: 12px 15px; color: var(--muted); font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+td { padding: 14px 15px; border-bottom: 1px solid var(--line); }
+th.number, td.number { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.badge { display: inline-flex; padding: 4px 9px; border-radius: 999px; background: #eef4ff; color: #1d4ed8; font-size: 12px; font-weight: 700; }
+.badge.non-current { background: #f3efff; color: #6d28d9; }
+.total-row td { background: #f8fafc; font-weight: 780; }
+.footer { color: var(--muted); text-align: center; font-size: 12px; margin-top: 26px; }
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .report { width: min(100% - 24px, 1180px); margin-top: 12px; }
+  .hero { padding: 36px 28px 48px; border-radius: 18px; }
+  .kpis { grid-template-columns: 1fr; margin-top: -26px; }
+  .chart-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: white; }
+  .report { width: 100%; margin: 0; }
+  .hero, .kpi, .panel, .chart-card { box-shadow: none; break-inside: avoid; }
+  .chart-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body><main class="report">
+  <header class="hero">
+    <p class="eyebrow">Financial analysis · Statement of financial position</p>
+    <h1>Northstar Manufacturing Ltd.</h1>
+    <div class="hero-meta">
+      <span><strong>Period</strong> · Year ended 31 December 2025</span>
+      <span><strong>Currency</strong> · USD</span>
+      <span><strong>Ticker</strong> · NSTAR</span>
+    </div>
+  </header>
+  <section class="kpis" aria-label="Key totals">
+  <div class="kpi"><span class="kpi-label">Total assets</span><strong class="kpi-value">USD 16,000,000.00</strong><span class="kpi-note">100.0% of reported assets</span></div>
+  <div class="kpi"><span class="kpi-label">Total liabilities</span><strong class="kpi-value">USD 8,250,000.00</strong><span class="kpi-note">51.6% of total assets</span></div>
+  <div class="kpi"><span class="kpi-label">Net assets</span><strong class="kpi-value">USD 7,750,000.00</strong><span class="kpi-note">Assets less liabilities</span></div>
+  <div class="kpi"><span class="kpi-label">Current ratio</span><strong class="kpi-value">1.99:1</strong><span class="kpi-note">Current assets / current liabilities</span></div>
+</section>
+  <section class="section" aria-labelledby="interpretation-heading">
+    <h2 id="interpretation-heading" class="section-heading">Interpretation</h2>
+    <div class="panel"><ul class="insights"><li>Non-current assets represent 65.6% of total assets, compared with 34.4% for current assets.</li><li>The largest asset line is Fixed assets, at USD 6,800,000.00 (42.5% of total assets).</li><li>Current liabilities represent 33.5% of total liabilities; the largest liability line is Long-term debt at USD 4,200,000.00 (50.9% of liabilities).</li><li>Total liabilities equal 51.6% of assets, leaving net assets of USD 7,750,000.00; the current ratio is 1.99:1.</li></ul></div>
+  </section>
+  <section class="section" aria-labelledby="visual-heading">
+    <h2 id="visual-heading" class="section-heading">Visual analysis</h2>
+    <div class="chart-grid"><article class="chart-card">
+  <div class="chart-copy"><h3>Asset structure</h3><p>Current and non-current share of total assets</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 320" role="img" aria-label="Current assets 34.4%; Non-current assets 65.6%">
+  <title>Asset structure</title>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#e9eef7" stroke-width="34"/>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#7c3aed" stroke-width="34"/>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#2563eb" stroke-width="34"
+    pathLength="100" stroke-dasharray="34.3750 65.6250"
+    transform="rotate(-90 190 150)"/>
+  <text x="190" y="143" text-anchor="middle" class="svg-kicker">TOTAL ASSETS</text>
+  <text x="190" y="171" text-anchor="middle" class="svg-value">USD 16,000,000.00</text>
+  <rect x="390" y="99" width="16" height="16" rx="4" fill="#2563eb"/>
+  <text x="420" y="112" class="svg-label">Current assets</text>
+  <text x="710" y="112" text-anchor="end" class="svg-value-sm">34.4%</text>
+  <rect x="390" y="169" width="16" height="16" rx="4" fill="#7c3aed"/>
+  <text x="420" y="182" class="svg-label">Non-current assets</text>
+  <text x="710" y="182" text-anchor="end" class="svg-value-sm">65.6%</text>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Liability structure</h3><p>Current and non-current share of total liabilities</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 320" role="img" aria-label="Current liabilities 33.5%; Non-current liabilities 66.5%">
+  <title>Liability structure</title>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#e9eef7" stroke-width="34"/>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#7c3aed" stroke-width="34"/>
+  <circle cx="190" cy="150" r="94" fill="none" stroke="#2563eb" stroke-width="34"
+    pathLength="100" stroke-dasharray="33.4545 66.5455"
+    transform="rotate(-90 190 150)"/>
+  <text x="190" y="143" text-anchor="middle" class="svg-kicker">TOTAL LIABILITIES</text>
+  <text x="190" y="171" text-anchor="middle" class="svg-value">USD 8,250,000.00</text>
+  <rect x="390" y="99" width="16" height="16" rx="4" fill="#2563eb"/>
+  <text x="420" y="112" class="svg-label">Current liabilities</text>
+  <text x="710" y="112" text-anchor="end" class="svg-value-sm">33.5%</text>
+  <rect x="390" y="169" width="16" height="16" rx="4" fill="#7c3aed"/>
+  <text x="420" y="182" class="svg-label">Non-current liabilities</text>
+  <text x="710" y="182" text-anchor="end" class="svg-value-sm">66.5%</text>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Largest asset categories</h3><p>All asset line items ranked by share of total assets</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 542" role="img" aria-label="Largest asset categories, 8 categories">
+  <title>Largest asset categories</title>
+  <g>
+  <text x="24" y="61" class="svg-label">Fixed assets</text>
+  <rect x="265" y="42" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="42" width="420.00" height="22" rx="6" fill="#2563eb"/>
+  <text x="704" y="60" class="svg-number">42.5%</text>
+  <text x="265" y="82" class="svg-note">6,800,000.00</text>
+</g><g>
+  <text x="24" y="119" class="svg-label">Inventory</text>
+  <rect x="265" y="100" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="100" width="132.18" height="22" rx="6" fill="#7c3aed"/>
+  <text x="704" y="118" class="svg-number">13.4%</text>
+  <text x="265" y="140" class="svg-note">2,140,000.00</text>
+</g><g>
+  <text x="24" y="177" class="svg-label">Accounts receivable</text>
+  <rect x="265" y="158" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="158" width="108.71" height="22" rx="6" fill="#0f766e"/>
+  <text x="704" y="176" class="svg-number">11.0%</text>
+  <text x="265" y="198" class="svg-note">1,760,000.00</text>
+</g><g>
+  <text x="24" y="235" class="svg-label">Long-term investments</text>
+  <rect x="265" y="216" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="216" width="92.65" height="22" rx="6" fill="#d97706"/>
+  <text x="704" y="234" class="svg-number">9.4%</text>
+  <text x="265" y="256" class="svg-note">1,500,000.00</text>
+</g><g>
+  <text x="24" y="293" class="svg-label">Cash and cash equivalents</text>
+  <rect x="265" y="274" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="274" width="79.06" height="22" rx="6" fill="#db2777"/>
+  <text x="704" y="292" class="svg-number">8.0%</text>
+  <text x="265" y="314" class="svg-note">1,280,000.00</text>
+</g><g>
+  <text x="24" y="351" class="svg-label">Right-of-use assets</text>
+  <rect x="265" y="332" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="332" width="77.21" height="22" rx="6" fill="#0891b2"/>
+  <text x="704" y="350" class="svg-number">7.8%</text>
+  <text x="265" y="372" class="svg-note">1,250,000.00</text>
+</g><g>
+  <text x="24" y="409" class="svg-label">Intangible assets</text>
+  <rect x="265" y="390" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="390" width="58.68" height="22" rx="6" fill="#65a30d"/>
+  <text x="704" y="408" class="svg-number">5.9%</text>
+  <text x="265" y="430" class="svg-note">950,000.00</text>
+</g><g>
+  <text x="24" y="467" class="svg-label">Prepayments</text>
+  <rect x="265" y="448" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="448" width="19.76" height="22" rx="6" fill="#2563eb"/>
+  <text x="704" y="466" class="svg-number">2.0%</text>
+  <text x="265" y="488" class="svg-note">320,000.00</text>
+</g>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Largest liability categories</h3><p>All liability line items ranked by share of total liabilities</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 484" role="img" aria-label="Largest liability categories, 7 categories">
+  <title>Largest liability categories</title>
+  <g>
+  <text x="24" y="61" class="svg-label">Long-term debt</text>
+  <rect x="265" y="42" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="42" width="420.00" height="22" rx="6" fill="#2563eb"/>
+  <text x="704" y="60" class="svg-number">50.9%</text>
+  <text x="265" y="82" class="svg-note">4,200,000.00</text>
+</g><g>
+  <text x="24" y="119" class="svg-label">Accounts payable</text>
+  <rect x="265" y="100" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="100" width="138.00" height="22" rx="6" fill="#7c3aed"/>
+  <text x="704" y="118" class="svg-number">16.7%</text>
+  <text x="265" y="140" class="svg-note">1,380,000.00</text>
+</g><g>
+  <text x="24" y="177" class="svg-label">Lease liabilities</text>
+  <rect x="265" y="158" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="158" width="98.00" height="22" rx="6" fill="#0f766e"/>
+  <text x="704" y="176" class="svg-number">11.9%</text>
+  <text x="265" y="198" class="svg-note">980,000.00</text>
+</g><g>
+  <text x="24" y="235" class="svg-label">Short-term debt</text>
+  <rect x="265" y="216" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="216" width="72.00" height="22" rx="6" fill="#d97706"/>
+  <text x="704" y="234" class="svg-number">8.7%</text>
+  <text x="265" y="256" class="svg-note">720,000.00</text>
+</g><g>
+  <text x="24" y="293" class="svg-label">Accrued expenses</text>
+  <rect x="265" y="274" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="274" width="45.00" height="22" rx="6" fill="#db2777"/>
+  <text x="704" y="292" class="svg-number">5.5%</text>
+  <text x="265" y="314" class="svg-note">450,000.00</text>
+</g><g>
+  <text x="24" y="351" class="svg-label">Deferred tax liabilities</text>
+  <rect x="265" y="332" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="332" width="31.00" height="22" rx="6" fill="#0891b2"/>
+  <text x="704" y="350" class="svg-number">3.8%</text>
+  <text x="265" y="372" class="svg-note">310,000.00</text>
+</g><g>
+  <text x="24" y="409" class="svg-label">Taxes payable</text>
+  <rect x="265" y="390" width="420" height="22" rx="6" fill="#e9eef7"/>
+  <rect x="265" y="390" width="21.00" height="22" rx="6" fill="#65a30d"/>
+  <text x="704" y="408" class="svg-number">2.5%</text>
+  <text x="265" y="430" class="svg-note">210,000.00</text>
+</g>
+</svg></div>
+</article></div>
+  </section>
+  <section class="section" aria-labelledby="asset-detail-heading">
+    <h2 id="asset-detail-heading" class="section-heading">Asset detail</h2>
+    <div class="panel table-wrap"><table>
+  <thead><tr><th>Asset</th><th>Classification</th><th class="number">Amount</th><th class="number">% of assets</th></tr></thead>
+  <tbody><tr>
+  <td>Fixed assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 6,800,000.00</td>
+  <td class="number">42.5%</td>
+</tr><tr>
+  <td>Inventory</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 2,140,000.00</td>
+  <td class="number">13.4%</td>
+</tr><tr>
+  <td>Accounts receivable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 1,760,000.00</td>
+  <td class="number">11.0%</td>
+</tr><tr>
+  <td>Long-term investments</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 1,500,000.00</td>
+  <td class="number">9.4%</td>
+</tr><tr>
+  <td>Cash and cash equivalents</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 1,280,000.00</td>
+  <td class="number">8.0%</td>
+</tr><tr>
+  <td>Right-of-use assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 1,250,000.00</td>
+  <td class="number">7.8%</td>
+</tr><tr>
+  <td>Intangible assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 950,000.00</td>
+  <td class="number">5.9%</td>
+</tr><tr>
+  <td>Prepayments</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 320,000.00</td>
+  <td class="number">2.0%</td>
+</tr><tr class="total-row"><td>Total assets</td><td>—</td><td class="number">USD 16,000,000.00</td><td class="number">100.0%</td></tr></tbody>
+</table></div>
+  </section>
+  <section class="section" aria-labelledby="liability-detail-heading">
+    <h2 id="liability-detail-heading" class="section-heading">Liability detail</h2>
+    <div class="panel table-wrap"><table>
+  <thead><tr><th>Liability</th><th>Classification</th><th class="number">Amount</th><th class="number">% of liabilities</th><th class="number">% of assets</th></tr></thead>
+  <tbody><tr>
+  <td>Long-term debt</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 4,200,000.00</td>
+  <td class="number">50.9%</td><td class="number">26.2%</td>
+</tr><tr>
+  <td>Accounts payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 1,380,000.00</td>
+  <td class="number">16.7%</td><td class="number">8.6%</td>
+</tr><tr>
+  <td>Lease liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 980,000.00</td>
+  <td class="number">11.9%</td><td class="number">6.1%</td>
+</tr><tr>
+  <td>Short-term debt</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 720,000.00</td>
+  <td class="number">8.7%</td><td class="number">4.5%</td>
+</tr><tr>
+  <td>Accrued expenses</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 450,000.00</td>
+  <td class="number">5.5%</td><td class="number">2.8%</td>
+</tr><tr>
+  <td>Deferred tax liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 310,000.00</td>
+  <td class="number">3.8%</td><td class="number">1.9%</td>
+</tr><tr>
+  <td>Taxes payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 210,000.00</td>
+  <td class="number">2.5%</td><td class="number">1.3%</td>
+</tr><tr class="total-row"><td>Total liabilities</td><td>—</td><td class="number">USD 8,250,000.00</td><td class="number">100.0%</td><td class="number">51.6%</td></tr></tbody>
+</table></div>
+  </section>
+  <footer class="footer">Generated 2026-10-30 14:00 UTC · Amounts shown in USD</footer>
+</main></body>
+</html>

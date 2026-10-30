@@ -1,0 +1,82 @@
+@startuml BusinessLogicLayerClasses
+
+title Financial Position Report Generator - Business Logic Layer Classes
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+package "Business Logic Layer\nasset_report.business.analysis" #E2F3E7 {
+  class MetricsCalculator {
+    + {static} percentage(part: Money, whole: Money): Decimal
+    + {static} ratio(numerator: Money, denominator: Money): Decimal [0..1]
+  }
+
+  class FinancialMetric <<frozen dataclass>> {
+    + name: str
+    + statement_type: str
+    + classification: str
+    + amount: Money
+    + percentage_of_class: Decimal
+    + percentage_of_statement: Decimal
+    + percentage_of_assets: Decimal
+  }
+
+  class FinancialAnalysisResult <<frozen dataclass>> {
+    + data: FinancialStatementData
+    + current_total: Money
+    + non_current_total: Money
+    + total_assets: Money
+    + current_percentage: Decimal
+    + non_current_percentage: Decimal
+    + current_metrics: tuple(FinancialMetric)
+    + non_current_metrics: tuple(FinancialMetric)
+    + current_liabilities_total: Money
+    + non_current_liabilities_total: Money
+    + total_liabilities: Money
+    + liability_to_assets_percentage: Decimal
+    + net_assets: Decimal
+    + current_ratio: Decimal [0..1]
+    + all_asset_metrics: tuple(FinancialMetric) {property}
+    + all_liability_metrics: tuple(FinancialMetric) {property}
+  }
+
+  class FinancialAnalysisService {
+    - calculator: MetricsCalculator
+    + __init__(calculator: MetricsCalculator = None)
+    + analyze(data: FinancialStatementData): FinancialAnalysisResult
+    - _metrics(items, statement_type, classification, class_total, statement_total, total_assets): tuple(FinancialMetric)
+  }
+}
+
+package "Domain Layer" #E3F0F8 {
+  class Money <<value object>>
+  class FinancialStatementData <<aggregate>>
+  class AssetItem <<entity>>
+  class LiabilityItem <<entity>>
+}
+
+FinancialAnalysisService *-- MetricsCalculator
+FinancialAnalysisService ..> FinancialStatementData : consumes
+FinancialAnalysisService ..> AssetItem : iterates
+FinancialAnalysisService ..> LiabilityItem : iterates
+FinancialAnalysisService ..> FinancialAnalysisResult : creates
+FinancialAnalysisService ..> FinancialMetric : creates
+
+FinancialAnalysisResult *-- "0..*" FinancialMetric
+FinancialAnalysisResult --> FinancialStatementData
+FinancialAnalysisResult --> Money : totals
+FinancialMetric --> Money : amount
+MetricsCalculator ..> Money
+
+note bottom of FinancialAnalysisService
+  Uses Decimal-backed Money values.
+  Rejects an all-zero asset statement.
+  Calculates asset/liability composition,
+  leverage, net assets, and current ratio.
+end note
+
+@enduml

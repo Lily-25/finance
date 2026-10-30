@@ -1,6 +1,6 @@
 @startuml ApplicationLayerPackages
 
-title Asset Report Generator - Application Layer Packages
+title Financial Position Report Generator - Application Layer Packages
 top to bottom direction
 
 skinparam backgroundColor #FFFFFF

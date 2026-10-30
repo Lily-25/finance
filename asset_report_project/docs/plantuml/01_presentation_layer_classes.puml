@@ -1,6 +1,6 @@
 @startuml PresentationLayerClasses
 
-title Asset Report Generator - Presentation Layer
+title Financial Position Report Generator - Presentation Layer
 left to right direction
 
 skinparam backgroundColor #FFFFFF
@@ -18,6 +18,7 @@ package "Presentation Layer\nasset_report.presentation.cli" #DCEBFA {
 
 package "Application Layer" #E3EEFF {
   class FinancialAnalysisApp {
+    + generate_financial_report(input_path, output_path, title): Path
     + generate_asset_report(input_path, output_path, title): Path
   }
 }
@@ -33,7 +34,7 @@ CLI ..> FinancialAnalysisApp : invokes
 CLI ..> DataValidationError : handles
 
 note bottom of CLI
-  Input: a structured JSON path
+  Input: structured asset and liability JSON
   Options: --output, --title, --version
   Output: a stand-alone HTML report path
 end note

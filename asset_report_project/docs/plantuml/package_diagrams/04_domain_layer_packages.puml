@@ -1,6 +1,6 @@
 @startuml DomainLayerPackages
 
-title Asset Report Generator - Domain Layer Packages
+title Financial Position Report Generator - Domain Layer Packages
 left to right direction
 
 skinparam backgroundColor #FFFFFF
@@ -16,12 +16,12 @@ package "asset_report.domain" as Domain #E3F0F8 {
 
   DomainAPI ..> ModelsModule : re-exports models
   DomainAPI ..> RepositoriesModule : re-exports contract
-  RepositoriesModule ..> ModelsModule : AssetReportData
+  RepositoriesModule ..> ModelsModule : FinancialStatementData
 }
 
 note bottom of Domain
   models.py defines Company, Money, ReportingPeriod,
-  asset and liability items/statements, and AssetReportData.
+  asset and liability items/statements, and FinancialStatementData.
 
   repositories.py defines the
   FinancialStatementRepository protocol.

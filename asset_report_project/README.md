@@ -1,6 +1,6 @@
-# Asset Report Generator
+# Financial Position Report Generator
 
-A small, dependency-free Python project that turns structured asset data into a polished, stand-alone HTML report. It separates current from non-current assets, calculates totals and percentages with decimal arithmetic, renders four inline SVG charts, and writes a concise interpretation grounded in the supplied values.
+A small, dependency-free Python project that turns structured asset and liability data into a polished, stand-alone HTML report. It separates current from non-current items, calculates composition, liquidity, leverage, and net assets with decimal arithmetic, renders four inline SVG charts, and writes a concise interpretation grounded in the supplied values.
 
 The report has no JavaScript, external fonts, remote stylesheets, or image files. The generated HTML can be emailed, archived, or opened locally in any modern browser.
 
@@ -14,13 +14,13 @@ The report has no JavaScript, external fonts, remote stylesheets, or image files
 From this directory, generate the included example:
 
 ```sh
-python3 -m asset_report sample_data/assets.json --output build/asset-report.html
+python3 -m asset_report sample_data/assets.json --output build/financial-report.html
 ```
 
 Direct-file execution is also supported:
 
 ```sh
-python3 asset_report/__main__.py sample_data/assets.json --output build/asset-report.html
+python3 asset_report/__main__.py sample_data/assets.json --output build/financial-report.html
 ```
 
 Then open `build/asset-report.html` in a browser. Use `--title "Custom page title"` to override the browser-page title.
@@ -31,9 +31,41 @@ Show all command-line options:
 python3 -m asset_report --help
 ```
 
+### Main input parameters
+
+`asset_report.presentation.cli.main(argv)` accepts the same arguments as the command line:
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `input` | Yes | Path to a UTF-8 JSON financial statement |
+| `-o`, `--output` | No | HTML destination; defaults to `build/financial-report.html` |
+| `--title` | No | Custom browser-page title |
+| `--version` | No | Print the application version and exit |
+
+The comprehensive [`sample_data/main_input.json`](sample_data/main_input.json) supplies all 21 standard asset fields and all 16 standard liability fields. Run it with:
+
+```sh
+python3 -m asset_report \
+  sample_data/main_input.json \
+  --output build/main-input-report.html \
+  --title "Orion 2025 Financial Position Report"
+```
+
+The equivalent programmatic call is:
+
+```python
+from asset_report.presentation.cli import main
+
+exit_code = main([
+    "sample_data/main_input.json",
+    "--output", "build/main-input-report.html",
+    "--title", "Orion 2025 Financial Position Report",
+])
+```
+
 ## Input format
 
-Supply a UTF-8 JSON object with company details and two asset arrays:
+Supply a UTF-8 JSON object with company details, asset arrays, and liability arrays:
 
 ```json
 {
@@ -49,6 +81,14 @@ Supply a UTF-8 JSON object with company details and two asset arrays:
     "non_current": [
       {"name": "Property, plant and equipment", "amount": 4200000}
     ]
+  },
+  "liabilities": {
+    "current": [
+      {"name": "Accounts payable", "amount": 640000}
+    ],
+    "non_current": [
+      {"name": "Long-term debt", "amount": 2100000}
+    ]
   }
 }
 ```
@@ -57,10 +97,11 @@ Rules:
 
 - `company`, `reporting_period`, and `currency` must be non-empty strings; `ticker` is optional.
 - `assets.current` and `assets.non_current` must both be arrays; either one may be empty.
-- Every asset needs a non-empty `name` and a finite, non-negative `amount`.
+- `liabilities` is optional for backward compatibility. When supplied, `liabilities.current` and `liabilities.non_current` must both be arrays.
+- Every asset or liability needs a non-empty `name` and a finite, non-negative `amount`.
 - Amounts may be JSON numbers or decimal strings. Strings are useful when the source must preserve exact decimal notation.
 - At least one item is required and total assets must be greater than zero.
-- Names must be unique within each asset class, ignoring letter case.
+- Names must be unique within each statement class, ignoring letter case.
 - `currency` is displayed as supplied (uppercased); the program does not perform currency conversion.
 
 Invalid input produces a concise error and a non-zero exit status. The output file is written atomically so an existing report is not left partially written.
@@ -76,12 +117,12 @@ Invalid input produces a concise error and a non-zero exit status. The output fi
 
 It calculates `total_current_assets`, `total_non_current_assets`, `total_assets`, `component_percentages`, and `percentage_of_total(component)`. The existing list-based JSON input is mapped to these fields; recognized aliases such as “Prepaid expenses” and “Property, plant and equipment” map to `prepayments` and `fixed_assets`, while custom line items remain available.
 
-`LiabilityStatement` follows the same zero-safe design.
+`LiabilityStatement` follows the same zero-safe design and is connected to JSON input, analysis, charts, narrative, and HTML output.
 
 - Current liabilities: `accounts_payable`, `short_term_debt`, `notes_payable`, `accrued_expenses`, `taxes_payable`, `deferred_revenue`, `payroll_payable`, `non_current_liabilities_due_within_one_year`, and `other_current_liabilities`.
 - Non-current liabilities: `long_term_debt`, `lease_liabilities`, `deferred_tax_liabilities`, `pension_liabilities`, `provisions`, `deferred_income`, and `other_non_current_liabilities`.
 
-It calculates `total_current_liabilities`, `total_non_current_liabilities`, `total_liabilities`, `component_percentages`, and `percentage_of_total(component)`. The liability model is ready for programmatic use; the current CLI remains focused on the asset report.
+It calculates `total_current_liabilities`, `total_non_current_liabilities`, `total_liabilities`, `component_percentages`, and `percentage_of_total(component)`. `FinancialStatementData` combines `Company`, `AssetStatement`, and `LiabilityStatement`; the analysis also calculates liabilities as a percentage of assets, net assets, and the current ratio. `AssetReportData` and `generate_asset_report(...)` remain available as compatibility names.
 
 ```python
 from asset_report.domain import AssetStatement, LiabilityStatement
@@ -98,26 +139,26 @@ assert liabilities.total_liabilities.amount == 400
 
 The generated report includes:
 
-1. Total, current, and non-current asset summary cards.
-2. A short interpretation of asset structure, largest categories, and concentration.
+1. Total assets, total liabilities, net assets, and current-ratio summary cards.
+2. A short interpretation of asset structure, liability composition, leverage, and liquidity.
 3. Four accessible inline SVG charts:
    - current versus non-current asset structure;
-   - current asset composition;
-   - non-current asset composition;
-   - all asset categories ranked by share of total assets.
-4. A detailed table with classification, amount, and total-asset percentage.
+   - current versus non-current liability structure;
+   - all asset categories ranked by share of total assets;
+   - all liability categories ranked by share of total liabilities.
+4. Detailed asset and liability tables with classification, amount, composition percentage, and liability share of assets.
 
 All user-provided text is HTML-escaped in both the report and SVG charts.
 
 ## Architecture
 
-The implementation follows the supplied layered PlantUML package plans while keeping the report output asset-focused and the domain liability-ready:
+The implementation follows the supplied layered PlantUML package plans with assets and liabilities carried consistently through every layer:
 
 ```text
 asset_report/
 ├── presentation/       CLI parsing and user-facing messages
 ├── application/        application facade, configuration, use-case orchestration
-├── business/           metrics, analysis service, immutable analysis result
+├── business/           asset/liability metrics, ratios, immutable analysis result
 ├── domain/             company, money, asset/liability statements, repository contract
 ├── data_access/        JSON reader, standardizer, validator, mapper, repository adapter
 └── output/             narratives, four SVG charts, HTML template, file exporter
@@ -132,9 +173,9 @@ Implementation-aligned PlantUML package and class diagrams are available in [`do
 ```python
 from asset_report import FinancialAnalysisApp
 
-output = FinancialAnalysisApp().generate_asset_report(
+output = FinancialAnalysisApp().generate_financial_report(
     "sample_data/assets.json",
-    "build/asset-report.html",
+    "build/financial-report.html",
 )
 print(output)
 ```
@@ -147,7 +188,7 @@ Run the standard-library test suite from this directory:
 python3 -m unittest discover -s tests -v
 ```
 
-The tests cover domain invariants, malformed input, normalization, exact calculations, rankings, narratives, SVG accessibility, HTML escaping, export behavior, CLI errors, and complete report generation.
+The tests cover domain invariants, malformed asset and liability input, backward-compatible asset-only input, exact totals and ratios, rankings, narratives, SVG accessibility, HTML escaping, export behavior, CLI errors, and complete report generation.
 
 ## Project files
 
@@ -155,7 +196,8 @@ The tests cover domain invariants, malformed input, normalization, exact calcula
 README.md
 asset_report/             source package
 docs/plantuml/            system and per-layer class diagrams
-sample_data/assets.json   ready-to-run example
+sample_data/assets.json   ready-to-run asset and liability example
+sample_data/main_input.json  comprehensive input with all standard fields
 tests/                    unit and integration tests
 build/                    generated example report
 ```

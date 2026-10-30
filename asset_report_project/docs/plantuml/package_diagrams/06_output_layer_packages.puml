@@ -1,6 +1,6 @@
 @startuml OutputLayerPackages
 
-title Asset Report Generator - Output Layer Packages
+title Financial Position Report Generator - Output Layer Packages
 left to right direction
 
 skinparam backgroundColor #FFFFFF
@@ -27,8 +27,8 @@ ChartsModule ..> AnalysisModule : results + metrics
 ReportingModule ..> AnalysisModule : results + metrics
 
 note bottom of Output
-  charts.py generates four accessible inline SVGs.
-  reporting.py creates narrative, HTML, and the file export.
+  charts.py generates four accessible asset/liability SVGs.
+  reporting.py creates financial narrative, HTML, and the file export.
 
   Paired class diagram:
   06_output_layer_classes.puml

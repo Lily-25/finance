@@ -1,6 +1,6 @@
 @startuml ApplicationLayerClasses
 
-title Asset Report Generator - Application Layer Classes
+title Financial Position Report Generator - Application Layer Classes
 top to bottom direction
 
 skinparam backgroundColor #FFFFFF
@@ -11,24 +11,26 @@ skinparam classAttributeIconSize 0
 
 package "Application Facade and Configuration\nasset_report.application.app" #E3EEFF {
   class ApplicationConfig <<frozen dataclass>> {
-    + default_output: Path = build/asset-report.html
+    + default_output: Path = build/financial-report.html
   }
 
   class DependencyContainer {
-    + generate_asset_report(): GenerateAssetReport
+    + generate_financial_report(): GenerateFinancialReport
+    + generate_asset_report(): GenerateFinancialReport
   }
 
   class FinancialAnalysisApp {
     - config: ApplicationConfig
     - container: DependencyContainer
     + __init__(config: ApplicationConfig = None, container: DependencyContainer = None)
+    + generate_financial_report(input_path, output_path = None, title = None): Path
     + generate_asset_report(input_path, output_path = None, title = None): Path
   }
 }
 
 package "Use Cases\nasset_report.application.use_cases" #E9F0FF {
-  class GenerateAssetReport {
-    - analysis_service: AssetAnalysisService
+  class GenerateFinancialReport {
+    - analysis_service: FinancialAnalysisService
     - chart_generator: ChartGenerator
     - report_builder: ReportBuilder
     - exporter: ReportFileExporter
@@ -38,7 +40,7 @@ package "Use Cases\nasset_report.application.use_cases" #E9F0FF {
 }
 
 package "Business Logic Layer" #E2F3E7 {
-  class AssetAnalysisService
+  class FinancialAnalysisService
 }
 
 package "Domain Layer" #E3F0F8 {
@@ -51,7 +53,7 @@ package "Data Access Layer" #FFF0DA {
 
 package "Output Layer" #EEE5FA {
   interface ChartGenerator
-  class AssetCharts
+  class FinancialCharts
   class ReportBuilder
   class ReportFileExporter
 }
@@ -59,21 +61,21 @@ package "Output Layer" #EEE5FA {
 FinancialAnalysisApp *-- ApplicationConfig
 FinancialAnalysisApp *-- DependencyContainer
 FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates from input path
-FinancialAnalysisApp ..> GenerateAssetReport : requests
+FinancialAnalysisApp ..> GenerateFinancialReport : requests
 
-DependencyContainer ..> GenerateAssetReport : assembles
-DependencyContainer ..> AssetAnalysisService : creates
-DependencyContainer ..> AssetCharts : creates
+DependencyContainer ..> GenerateFinancialReport : assembles
+DependencyContainer ..> FinancialAnalysisService : creates
+DependencyContainer ..> FinancialCharts : creates
 DependencyContainer ..> ReportBuilder : creates
 DependencyContainer ..> ReportFileExporter : creates
 
-GenerateAssetReport --> FinancialStatementRepository : load()
-GenerateAssetReport --> AssetAnalysisService : analyze()
-GenerateAssetReport --> ChartGenerator : generate()
-GenerateAssetReport --> ReportBuilder : build()
-GenerateAssetReport --> ReportFileExporter : export()
+GenerateFinancialReport --> FinancialStatementRepository : load()
+GenerateFinancialReport --> FinancialAnalysisService : analyze()
+GenerateFinancialReport --> ChartGenerator : generate()
+GenerateFinancialReport --> ReportBuilder : build()
+GenerateFinancialReport --> ReportFileExporter : export()
 
-note right of GenerateAssetReport
+note right of GenerateFinancialReport
   Enforces exactly four charts before
   composing and exporting the report.
 end note

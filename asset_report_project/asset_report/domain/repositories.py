@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .models import AssetReportData
+from .models import FinancialStatementData
 
 
 class FinancialStatementRepository(Protocol):
-    def load(self) -> AssetReportData:
+    def load(self) -> FinancialStatementData:
         """Load one structured financial statement."""
-

@@ -45,6 +45,14 @@ def valid_payload() -> dict[str, object]:
                 {"name": "Equipment", "amount": 700},
             ],
         },
+        "liabilities": {
+            "current": [
+                {"name": "Accounts payable", "amount": 200},
+            ],
+            "non_current": [
+                {"name": "Long-term debt", "amount": 300},
+            ],
+        },
     }
 
 
@@ -169,6 +177,21 @@ class RepositoryTests(TemporaryJSONMixin, unittest.TestCase):
         self.assertIsNone(data.company.ticker)
         self.assertEqual(data.currency, "USD")
         self.assertEqual(len(data.statement.current_assets), 2)
+        self.assertEqual(data.liabilities.total_liabilities.amount, Decimal("500"))
+
+    def test_asset_only_input_remains_backward_compatible(self) -> None:
+        payload = valid_payload()
+        del payload["liabilities"]
+        data = JSONFinancialStatementRepository(self.write_json(payload)).load()
+        self.assertEqual(data.liabilities.total_liabilities, Money.zero())
+
+    def test_liability_sections_are_validated_with_precise_locations(self) -> None:
+        payload = valid_payload()
+        payload["liabilities"]["current"][0]["amount"] = "abc"  # type: ignore[index]
+        with self.assertRaisesRegex(
+            DataValidationError, r"liabilities\.current\[0\]\.amount"
+        ):
+            JSONFinancialStatementRepository(self.write_json(payload)).load()
 
     def test_missing_root_field_is_rejected(self) -> None:
         payload = valid_payload()
@@ -246,6 +269,20 @@ class AnalysisTests(TemporaryJSONMixin, unittest.TestCase):
     def test_calculates_item_share_of_total(self) -> None:
         self.assertEqual(self.result.all_metrics[0].percentage_of_total, Decimal("70.0"))
 
+    def test_calculates_liability_totals_and_position_ratios(self) -> None:
+        self.assertEqual(self.result.current_liabilities_total.amount, Decimal("200"))
+        self.assertEqual(self.result.non_current_liabilities_total.amount, Decimal("300"))
+        self.assertEqual(self.result.total_liabilities.amount, Decimal("500"))
+        self.assertEqual(self.result.liability_to_assets_percentage, Decimal("50.0"))
+        self.assertEqual(self.result.net_assets, Decimal("500.00"))
+        self.assertEqual(self.result.current_ratio, Decimal("1.5000"))
+
+    def test_ranks_liability_categories(self) -> None:
+        self.assertEqual(
+            [item.name for item in self.result.all_liability_metrics],
+            ["Long-term debt", "Accounts payable"],
+        )
+
     def test_zero_denominator_percentage_is_zero(self) -> None:
         self.assertEqual(MetricsCalculator.percentage(Money.zero(), Money.zero()), Decimal("0"))
 
@@ -266,6 +303,15 @@ class OutputTests(TemporaryJSONMixin, unittest.TestCase):
 
     def test_generates_exactly_four_charts(self) -> None:
         self.assertEqual(len(self.charts), 4)
+        self.assertEqual(
+            [chart.title for chart in self.charts],
+            [
+                "Asset structure",
+                "Liability structure",
+                "Largest asset categories",
+                "Largest liability categories",
+            ],
+        )
 
     def test_charts_are_inline_accessible_svg(self) -> None:
         for chart in self.charts:
@@ -285,6 +331,8 @@ class OutputTests(TemporaryJSONMixin, unittest.TestCase):
         self.assertEqual(html.count('<svg class="chart-svg"'), 4)
         self.assertNotIn("<script", html)
         self.assertNotIn("https://", html)
+        self.assertIn("Liability detail", html)
+        self.assertIn("Total liabilities", html)
 
     def test_report_escapes_data(self) -> None:
         html = ReportBuilder().build(self.result, self.charts)
@@ -301,12 +349,33 @@ class OutputTests(TemporaryJSONMixin, unittest.TestCase):
 
 
 class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
+    def test_comprehensive_main_input_covers_every_standard_field(self) -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        data = JSONFinancialStatementRepository(
+            project_root / "sample_data" / "main_input.json"
+        ).load()
+        for field_name in AssetStatement.CURRENT_FIELDS + AssetStatement.NON_CURRENT_FIELDS:
+            self.assertGreater(getattr(data.statement, field_name).amount, 0)
+        self.assertEqual(data.statement.total_current_assets.amount, Decimal("6500000"))
+        self.assertEqual(data.statement.total_non_current_assets.amount, Decimal("13500000"))
+        self.assertEqual(data.statement.total_assets.amount, Decimal("20000000"))
+        for field_name in LiabilityStatement.CURRENT_FIELDS + LiabilityStatement.NON_CURRENT_FIELDS:
+            self.assertGreater(getattr(data.liabilities, field_name).amount, 0)
+        self.assertEqual(data.liabilities.total_current_liabilities.amount, Decimal("3500000"))
+        self.assertEqual(
+            data.liabilities.total_non_current_liabilities.amount, Decimal("6000000")
+        )
+        self.assertEqual(data.liabilities.total_liabilities.amount, Decimal("9500000"))
+        self.assertEqual(data.company.ticker, "OIG")
+
     def test_application_generates_complete_report(self) -> None:
         input_path = self.write_json(valid_payload())
         output_path = Path(self.temp_dir.name) / "report.html"
         generated = FinancialAnalysisApp().generate_asset_report(input_path, output_path)
         self.assertEqual(generated, output_path.resolve())
-        self.assertIn("Asset detail", output_path.read_text(encoding="utf-8"))
+        html = output_path.read_text(encoding="utf-8")
+        self.assertIn("Asset detail", html)
+        self.assertIn("Liability detail", html)
 
     def test_cli_returns_success_and_prints_destination(self) -> None:
         input_path = self.write_json(valid_payload())

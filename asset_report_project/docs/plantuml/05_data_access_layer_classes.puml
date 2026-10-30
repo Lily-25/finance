@@ -1,6 +1,6 @@
 @startuml DataAccessLayerClasses
 
-title Asset Report Generator - Data Access Layer Classes
+title Financial Position Report Generator - Data Access Layer Classes
 top to bottom direction
 
 skinparam backgroundColor #FFFFFF
@@ -25,12 +25,14 @@ package "JSON Data Access\nasset_report.data_access.json_repository" #FFF0DA {
   class FinancialDataValidator {
     + REQUIRED_ROOT: tuple(str)
     + validate(data: dict): None
-    - {static} _validate_items(items: list, section: str): None
+    - _validate_statement(statement, name, require_item): None
+    - {static} _validate_items(items: list, statement_name: str, section: str): None
   }
 
-  class AssetStatementMapper {
-    + map(data: dict): AssetReportData
-    - {static} _map_item(item: dict): AssetItem
+  class FinancialStatementMapper {
+    + map(data: dict): FinancialStatementData
+    - {static} _map_asset(item: dict): AssetItem
+    - {static} _map_liability(item: dict): LiabilityItem
   }
 
   class JSONFinancialStatementRepository {
@@ -38,22 +40,24 @@ package "JSON Data Access\nasset_report.data_access.json_repository" #FFF0DA {
     + reader: JSONReader
     + standardizer: DataStandardizer
     + validator: FinancialDataValidator
-    + mapper: AssetStatementMapper
+    + mapper: FinancialStatementMapper
     + __init__(path)
-    + load(): AssetReportData
+    + load(): FinancialStatementData
   }
 }
 
 package "Domain Layer" #E3F0F8 {
   interface FinancialStatementRepository <<Protocol>> {
-    + load(): AssetReportData
+    + load(): FinancialStatementData
   }
   class Money <<value object>>
   class ReportingPeriod <<value object>>
   class Company <<entity>>
   class AssetItem <<entity>>
   class AssetStatement <<entity>>
-  class AssetReportData <<aggregate>>
+  class LiabilityItem <<entity>>
+  class LiabilityStatement <<entity>>
+  class FinancialStatementData <<aggregate>>
 }
 
 class ValueError <<Python standard library>>
@@ -63,18 +67,20 @@ JSONFinancialStatementRepository ..|> FinancialStatementRepository
 JSONFinancialStatementRepository *-- JSONReader
 JSONFinancialStatementRepository *-- DataStandardizer
 JSONFinancialStatementRepository *-- FinancialDataValidator
-JSONFinancialStatementRepository *-- AssetStatementMapper
+JSONFinancialStatementRepository *-- FinancialStatementMapper
 
 JSONReader ..> DataValidationError : raises
 FinancialDataValidator ..> DataValidationError : raises
 FinancialDataValidator ..> Money : validates amount
 
-AssetStatementMapper ..> Money : constructs
-AssetStatementMapper ..> ReportingPeriod : constructs
-AssetStatementMapper ..> Company : constructs
-AssetStatementMapper ..> AssetItem : constructs
-AssetStatementMapper ..> AssetStatement : constructs
-AssetStatementMapper ..> AssetReportData : returns
+FinancialStatementMapper ..> Money : constructs
+FinancialStatementMapper ..> ReportingPeriod : constructs
+FinancialStatementMapper ..> Company : constructs
+FinancialStatementMapper ..> AssetItem : constructs
+FinancialStatementMapper ..> AssetStatement : constructs
+FinancialStatementMapper ..> LiabilityItem : constructs
+FinancialStatementMapper ..> LiabilityStatement : constructs
+FinancialStatementMapper ..> FinancialStatementData : returns
 
 note right of JSONFinancialStatementRepository
   Pipeline:
@@ -84,7 +90,8 @@ end note
 note bottom of FinancialDataValidator
   Checks required fields, section types,
   unique names, non-negative finite amounts,
-  and the presence of at least one asset.
+  the presence of at least one asset, and
+  optional liability section consistency.
 end note
 
 @enduml

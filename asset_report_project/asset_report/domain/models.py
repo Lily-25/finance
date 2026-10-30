@@ -370,6 +370,12 @@ class LiabilityStatement:
         "deferred_income": "Deferred income",
         "other_non_current_liabilities": "Other non-current liabilities",
     }
+    ALIASES: ClassVar[dict[str, str]] = {
+        "current_portion_of_long_term_debt": "non_current_liabilities_due_within_one_year",
+        "current_maturities_of_long_term_debt": "non_current_liabilities_due_within_one_year",
+        "accounts_payable_and_accruals": "accounts_payable",
+        "tax_payable": "taxes_payable",
+    }
 
     accounts_payable: Money = field(default_factory=Money.zero)
     short_term_debt: Money = field(default_factory=Money.zero)
@@ -432,12 +438,14 @@ class LiabilityStatement:
         values: dict[str, Money],
         additional: list[LiabilityItem],
     ) -> None:
-        aliases = {
+        display_aliases = {
             _normalize_name(label): field_name for field_name, label in cls.DISPLAY_NAMES.items()
         }
         for item in items:
             normalized = _normalize_name(item.name)
-            field_name = aliases.get(normalized, normalized)
+            field_name = cls.ALIASES.get(
+                normalized, display_aliases.get(normalized, normalized)
+            )
             if field_name in allowed_fields:
                 values[field_name] = values[field_name] + item.amount
             else:
@@ -457,6 +465,10 @@ class LiabilityStatement:
     @property
     def non_current_liabilities(self) -> tuple[LiabilityItem, ...]:
         return self._standard_items(self.NON_CURRENT_FIELDS) + self.additional_non_current_liabilities
+
+    @property
+    def all_liabilities(self) -> tuple[LiabilityItem, ...]:
+        return self.current_liabilities + self.non_current_liabilities
 
     @property
     def total_current_liabilities(self) -> Money:
@@ -498,9 +510,26 @@ class LiabilityStatement:
 
 
 @dataclass(frozen=True)
-class AssetReportData:
+class FinancialStatementData:
+    """Complete statement of financial position used by the reporting pipeline."""
+
     company: Company
-    statement: AssetStatement
+    assets: AssetStatement
+    liabilities: LiabilityStatement = field(default_factory=LiabilityStatement)
+
+    @property
+    def statement(self) -> AssetStatement:
+        """Backward-compatible asset statement accessor."""
+
+        return self.assets
+
+    @property
+    def asset_statement(self) -> AssetStatement:
+        return self.assets
+
+    @property
+    def liability_statement(self) -> LiabilityStatement:
+        return self.liabilities
 
     @property
     def currency(self) -> str:
@@ -509,3 +538,15 @@ class AssetReportData:
     @property
     def reporting_period(self) -> ReportingPeriod:
         return self.company.reporting_period
+
+
+class AssetReportData(FinancialStatementData):
+    """Backward-compatible constructor for the former asset-only aggregate."""
+
+    def __init__(
+        self,
+        company: Company,
+        statement: AssetStatement,
+        liabilities: LiabilityStatement | None = None,
+    ) -> None:
+        super().__init__(company, statement, liabilities or LiabilityStatement())

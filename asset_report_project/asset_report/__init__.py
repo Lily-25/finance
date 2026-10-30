@@ -1,6 +1,6 @@
-"""Dependency-free asset report generator."""
+"""Dependency-free asset and liability report generator."""
 
 from .application.app import FinancialAnalysisApp
 
 __all__ = ["FinancialAnalysisApp"]
-__version__ = "1.0.0"
+__version__ = "2.0.0"
