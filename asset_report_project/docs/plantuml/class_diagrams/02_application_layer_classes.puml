@@ -23,8 +23,8 @@ package "Application Facade and Configuration\nasset_report.application.app" #E3
     - config: ApplicationConfig
     - container: DependencyContainer
     + __init__(config: ApplicationConfig = None, container: DependencyContainer = None)
-    + generate_financial_report(input_path, output_path = None, title = None): Path
-    + generate_asset_report(input_path, output_path = None, title = None): Path
+    + generate_financial_report(input_paths, output_path = None, title = None): Path
+    + generate_asset_report(input_paths, output_path = None, title = None): Path
   }
 }
 
@@ -60,7 +60,7 @@ package "Output Layer" #EEE5FA {
 
 FinancialAnalysisApp *-- ApplicationConfig
 FinancialAnalysisApp *-- DependencyContainer
-FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates from input path
+FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates from one or more paths
 FinancialAnalysisApp ..> GenerateFinancialReport : requests
 
 DependencyContainer ..> GenerateFinancialReport : assembles

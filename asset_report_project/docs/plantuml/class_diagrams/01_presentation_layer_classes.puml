@@ -18,8 +18,8 @@ package "Presentation Layer\nasset_report.presentation.cli" #DCEBFA {
 
 package "Application Layer" #E3EEFF {
   class FinancialAnalysisApp {
-    + generate_financial_report(input_path, output_path, title): Path
-    + generate_asset_report(input_path, output_path, title): Path
+    + generate_financial_report(input_paths, output_path, title): Path
+    + generate_asset_report(input_paths, output_path, title): Path
   }
 }
 
@@ -34,7 +34,7 @@ CLI ..> FinancialAnalysisApp : invokes
 CLI ..> DataValidationError : handles
 
 note bottom of CLI
-  Input: structured asset and liability JSON
+  Input: one JSON statement or multiple period files
   Options: --output, --title, --version
   Output: a stand-alone HTML report path
 end note

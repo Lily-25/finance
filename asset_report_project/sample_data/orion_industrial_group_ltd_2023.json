@@ -1,0 +1,55 @@
+{
+  "company": "Orion Industrial Group Ltd.",
+  "ticker": "OIG",
+  "currency": "USD",
+  "reporting_period": "2023",
+  "assets": {
+    "current": [
+      {"name": "Cash and cash equivalents", "amount": 1200000},
+      {"name": "Trading financial assets", "amount": 100000},
+      {"name": "Notes receivable", "amount": 100000},
+      {"name": "Accounts receivable", "amount": 1300000},
+      {"name": "Receivables financing", "amount": 50000},
+      {"name": "Prepayments", "amount": 100000},
+      {"name": "Other receivables", "amount": 50000},
+      {"name": "Inventory", "amount": 850000},
+      {"name": "Non-current assets due within one year", "amount": 100000},
+      {"name": "Other current assets", "amount": 150000}
+    ],
+    "non_current": [
+      {"name": "Long-term investments", "amount": 200000},
+      {"name": "Debt investments", "amount": 100000},
+      {"name": "Equity investments", "amount": 100000},
+      {"name": "Fixed assets", "amount": 5800000},
+      {"name": "Construction in progress", "amount": 400000},
+      {"name": "Right-of-use assets", "amount": 500000},
+      {"name": "Intangible assets", "amount": 500000},
+      {"name": "Development expenditure", "amount": 100000},
+      {"name": "Goodwill", "amount": 100000},
+      {"name": "Deferred tax assets", "amount": 100000},
+      {"name": "Other non-current assets", "amount": 100000}
+    ]
+  },
+  "liabilities": {
+    "current": [
+      {"name": "Accounts payable", "amount": 1300000},
+      {"name": "Short-term debt", "amount": 650000},
+      {"name": "Notes payable", "amount": 100000},
+      {"name": "Accrued expenses", "amount": 150000},
+      {"name": "Taxes payable", "amount": 50000},
+      {"name": "Deferred revenue", "amount": 50000},
+      {"name": "Payroll payable", "amount": 50000},
+      {"name": "Non-current liabilities due within one year", "amount": 100000},
+      {"name": "Other current liabilities", "amount": 50000}
+    ],
+    "non_current": [
+      {"name": "Long-term debt", "amount": 3700000},
+      {"name": "Lease liabilities", "amount": 500000},
+      {"name": "Deferred tax liabilities", "amount": 100000},
+      {"name": "Pension liabilities", "amount": 50000},
+      {"name": "Provisions", "amount": 50000},
+      {"name": "Deferred income", "amount": 50000},
+      {"name": "Other non-current liabilities", "amount": 50000}
+    ]
+  }
+}

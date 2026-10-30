@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 from ..business.analysis import FinancialAnalysisService
 from ..data_access.json_repository import JSONFinancialStatementRepository
@@ -43,7 +44,7 @@ class FinancialAnalysisApp:
 
     def generate_financial_report(
         self,
-        input_path: str | Path,
+        input_path: str | Path | Sequence[str | Path],
         output_path: str | Path | None = None,
         title: str | None = None,
     ) -> Path:
@@ -55,7 +56,7 @@ class FinancialAnalysisApp:
 
     def generate_asset_report(
         self,
-        input_path: str | Path,
+        input_path: str | Path | Sequence[str | Path],
         output_path: str | Path | None = None,
         title: str | None = None,
     ) -> Path:

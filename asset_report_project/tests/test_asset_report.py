@@ -356,11 +356,36 @@ class OutputTests(TemporaryJSONMixin, unittest.TestCase):
 class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
     def setUp(self) -> None:
         self.project_root = Path(__file__).resolve().parents[1]
-        self.input_path = self.project_root / "sample_data" / "time_frame_input.json"
-        self.data = JSONFinancialStatementRepository(self.input_path).load()
+        self.input_paths = sorted(
+            (self.project_root / "sample_data").glob(
+                "orion_industrial_group_ltd_*.json"
+            )
+        )
+        self.data = JSONFinancialStatementRepository(self.input_paths).load()
         self.assertIsInstance(self.data, FinancialTimeSeriesData)
         self.result = AssetAnalysisService().analyze(self.data)
         self.assertIsInstance(self.result, TimeFrameAnalysisResult)
+
+    def bundled_payload(self) -> dict[str, object]:
+        snapshots = [
+            json.loads(path.read_text(encoding="utf-8"))
+            for path in self.input_paths
+        ]
+        first = snapshots[0]
+        return {
+            "company": first["company"],
+            "ticker": first["ticker"],
+            "currency": first["currency"],
+            "time_frame": {"start": "2023", "end": "2026Q3"},
+            "periods": [
+                {
+                    "reporting_period": snapshot["reporting_period"],
+                    "assets": snapshot["assets"],
+                    "liabilities": snapshot["liabilities"],
+                }
+                for snapshot in snapshots
+            ],
+        }
 
     def test_maps_ordered_financial_periods(self) -> None:
         self.assertEqual(
@@ -368,6 +393,26 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
             ["2023", "2024", "2025", "2026Q3"],
         )
         self.assertEqual(self.data.time_frame, "2023 to 2026Q3")
+
+    def test_period_files_cover_every_standard_line_item(self) -> None:
+        self.assertEqual(len(self.input_paths), 4)
+        for statement in self.data.statements:
+            for field_name in (
+                AssetStatement.CURRENT_FIELDS + AssetStatement.NON_CURRENT_FIELDS
+            ):
+                self.assertGreater(getattr(statement.assets, field_name).amount, 0)
+            for field_name in (
+                LiabilityStatement.CURRENT_FIELDS
+                + LiabilityStatement.NON_CURRENT_FIELDS
+            ):
+                self.assertGreater(getattr(statement.liabilities, field_name).amount, 0)
+
+    def test_multi_file_input_is_sorted_by_reporting_period(self) -> None:
+        data = JSONFinancialStatementRepository(list(reversed(self.input_paths))).load()
+        self.assertEqual(
+            [statement.reporting_period.label for statement in data.statements],
+            ["2023", "2024", "2025", "2026Q3"],
+        )
 
     def test_calculates_time_frame_changes(self) -> None:
         self.assertEqual(self.result.first.total_assets.amount, Decimal("12000000"))
@@ -406,19 +451,19 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         self.assertIn("USD 22,000,000.00", narrative)
 
     def test_rejects_duplicate_period_labels(self) -> None:
-        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload = self.bundled_payload()
         payload["periods"][1]["reporting_period"] = "2023"
         with self.assertRaisesRegex(DataValidationError, "unique"):
             JSONFinancialStatementRepository(self.write_json(payload)).load()
 
     def test_rejects_time_frame_boundary_mismatch(self) -> None:
-        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload = self.bundled_payload()
         payload["time_frame"]["end"] = "2026"
         with self.assertRaisesRegex(DataValidationError, "must match"):
             JSONFinancialStatementRepository(self.write_json(payload)).load()
 
     def test_rejects_periods_out_of_order(self) -> None:
-        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload = self.bundled_payload()
         payload.pop("time_frame")
         payload["periods"][0], payload["periods"][1] = (
             payload["periods"][1],
@@ -432,7 +477,7 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         self.addCleanup(temp_dir.cleanup)
         output_path = Path(temp_dir.name) / "time-frame-report.html"
         generated = FinancialAnalysisApp().generate_financial_report(
-            self.input_path, output_path
+            self.input_paths, output_path
         )
         self.assertEqual(generated, output_path.resolve())
         self.assertIn("Time-series analysis", output_path.read_text(encoding="utf-8"))

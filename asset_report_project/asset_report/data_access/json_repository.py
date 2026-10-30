@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from ..domain.models import (
     AssetItem,
@@ -310,14 +310,74 @@ AssetStatementMapper = FinancialStatementMapper
 class JSONFinancialStatementRepository:
     """Concrete repository for the project's JSON input format."""
 
-    def __init__(self, path: str | Path) -> None:
-        self.path = Path(path)
+    def __init__(self, path: str | Path | Sequence[str | Path]) -> None:
+        if isinstance(path, (str, Path)):
+            paths = (Path(path),)
+        else:
+            paths = tuple(Path(item) for item in path)
+        if not paths:
+            raise DataValidationError("At least one input file is required")
+
+        self.paths = paths
+        self.path = paths[0]
         self.reader = JSONReader()
         self.standardizer = DataStandardizer()
         self.validator = FinancialDataValidator()
         self.mapper = FinancialStatementMapper()
 
     def load(self) -> FinancialStatementData | FinancialTimeSeriesData:
-        data = self.standardizer.standardize(self.reader.read(self.path))
-        self.validator.validate(data)
-        return self.mapper.map(data)
+        if len(self.paths) == 1:
+            return self._load_path(self.paths[0])
+
+        statements: list[FinancialStatementData] = []
+        for path in self.paths:
+            statement = self._load_path(path, allow_embedded_time_series=False)
+            if not isinstance(statement, FinancialStatementData):
+                raise DataValidationError(
+                    f"{path}: each time-frame file must contain exactly one period"
+                )
+            statements.append(statement)
+
+        period_keys = [
+            FinancialTimeSeriesData._period_key(item.reporting_period.label)
+            for item in statements
+        ]
+        if all(key is not None for key in period_keys):
+            statements.sort(
+                key=lambda item: FinancialTimeSeriesData._period_key(
+                    item.reporting_period.label
+                )
+                or (0, 0)
+            )
+
+        first = statements[0]
+        start = statements[0].reporting_period.label
+        end = statements[-1].reporting_period.label
+        try:
+            return FinancialTimeSeriesData(
+                company=Company(
+                    name=first.company.name,
+                    ticker=first.company.ticker,
+                    currency=first.company.currency,
+                    reporting_period=ReportingPeriod(f"{start} to {end}"),
+                ),
+                statements=tuple(statements),
+            )
+        except ValueError as exc:
+            raise DataValidationError(f"Invalid time-frame files: {exc}") from exc
+
+    def _load_path(
+        self, path: Path, allow_embedded_time_series: bool = True
+    ) -> FinancialStatementData | FinancialTimeSeriesData:
+        try:
+            data = self.standardizer.standardize(self.reader.read(path))
+            if not allow_embedded_time_series and "periods" in data:
+                raise DataValidationError(
+                    "each time-frame file must contain exactly one period"
+                )
+            self.validator.validate(data)
+            return self.mapper.map(data)
+        except DataValidationError as exc:
+            if str(exc).startswith(str(path)):
+                raise
+            raise DataValidationError(f"{path}: {exc}") from exc

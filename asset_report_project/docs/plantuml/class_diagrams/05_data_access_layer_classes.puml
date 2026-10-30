@@ -40,12 +40,14 @@ package "JSON Data Access\nasset_report.data_access.json_repository" #FFF0DA {
 
   class JSONFinancialStatementRepository {
     + path: Path
+    + paths: tuple(Path)
     + reader: JSONReader
     + standardizer: DataStandardizer
     + validator: FinancialDataValidator
     + mapper: FinancialStatementMapper
-    + __init__(path)
+    + __init__(path or paths)
     + load(): FinancialStatementData or FinancialTimeSeriesData
+    - _load_path(path, allow_embedded_time_series): FinancialStatementData or FinancialTimeSeriesData
   }
 }
 
@@ -88,8 +90,9 @@ FinancialStatementMapper ..> FinancialStatementData : returns
 FinancialStatementMapper ..> FinancialTimeSeriesData : returns
 
 note right of JSONFinancialStatementRepository
-  Pipeline:
-  read -> standardize -> validate -> map
+  One file: read -> standardize -> validate -> map
+  Multiple files: map each complete period,
+  order recognized labels, then compose a time series.
 end note
 
 note bottom of FinancialDataValidator
@@ -97,7 +100,8 @@ note bottom of FinancialDataValidator
   unique names, non-negative finite amounts,
   the presence of at least one asset, and
   optional liability sections, unique periods,
-  and matching time-frame boundaries.
+  matching time-frame boundaries, and consistent
+  identity across separate period files.
 end note
 
 @enduml

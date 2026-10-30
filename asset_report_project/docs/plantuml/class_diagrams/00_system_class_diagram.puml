@@ -66,7 +66,7 @@ CLI ..> FinancialAnalysisApp : invokes
 
 FinancialAnalysisApp *-- ApplicationConfig
 FinancialAnalysisApp *-- DependencyContainer
-FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates
+FinancialAnalysisApp ..> JSONFinancialStatementRepository : one or more JSON paths
 DependencyContainer ..> GenerateFinancialReport : assembles
 
 GenerateFinancialReport --> FinancialStatementRepository : loads
@@ -125,6 +125,12 @@ NarrativeGenerator ..> TimeFrameAnalysisResult
 note right of GenerateFinancialReport
   Coordinates the complete pipeline:
   load -> analyze -> chart -> build -> export
+end note
+
+note right of JSONFinancialStatementRepository
+  One file produces one snapshot.
+  Multiple period files are ordered and
+  composed into FinancialTimeSeriesData.
 end note
 
 legend bottom

@@ -27,7 +27,8 @@ note bottom of DataAccess
   json_repository.py contains the complete
   read -> standardize -> validate -> map pipeline.
   Both asset and liability sections use the same pipeline.
-  Single snapshots and ordered period arrays are auto-detected.
+  Single snapshots, multiple complete period files,
+  and legacy ordered period arrays are auto-detected.
 
   JSONFinancialStatementRepository satisfies the
   repository protocol by structural typing.

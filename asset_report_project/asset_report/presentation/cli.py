@@ -16,7 +16,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="financial-report",
         description="Generate a polished HTML asset and liability report from JSON data.",
     )
-    parser.add_argument("input", type=Path, help="path to the structured asset JSON file")
+    parser.add_argument(
+        "input",
+        type=Path,
+        nargs="+",
+        help="one JSON statement, or two or more period files for a time-frame report",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -25,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="output HTML path (default: build/financial-report.html)",
     )
     parser.add_argument("--title", help="optional browser-page title")
-    parser.add_argument("--version", action="version", version="financial-report 2.1.0")
+    parser.add_argument("--version", action="version", version="financial-report 2.2.0")
     return parser
 
 

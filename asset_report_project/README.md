@@ -39,7 +39,7 @@ python3 -m asset_report --help
 
 | Parameter | Required | Description |
 | --- | --- | --- |
-| `input` | Yes | Path to a UTF-8 JSON financial statement |
+| `input` | Yes | One UTF-8 JSON statement, or two or more period files |
 | `-o`, `--output` | No | HTML destination; defaults to `build/financial-report.html` |
 | `--title` | No | Custom browser-page title |
 | `--version` | No | Print the application version and exit |
@@ -69,7 +69,7 @@ Generate the included 2023–2026Q3 time-frame analysis with the same command:
 
 ```sh
 python3 -m asset_report \
-  sample_data/time_frame_input.json \
+  sample_data/orion_industrial_group_ltd_*.json \
   --output build/time-frame-report.html \
   --title "Orion 2023–2026Q3 Trend Report"
 ```
@@ -119,48 +119,33 @@ Invalid input produces a concise error and a non-zero exit status. The output fi
 
 ### Time-frame input
 
-For trend analysis, replace the root `reporting_period`, `assets`, and `liabilities` with an ordered `periods` array. The same CLI automatically detects this format:
+Store every reporting period as a complete, independent statement using this naming
+convention:
 
-```json
-{
-  "company": "Example Company Ltd.",
-  "ticker": "EXM",
-  "currency": "USD",
-  "time_frame": {"start": "2023", "end": "2026Q3"},
-  "periods": [
-    {
-      "reporting_period": "2023",
-      "assets": {
-        "current": [{"name": "Cash", "amount": 100}],
-        "non_current": [{"name": "Fixed assets", "amount": 400}]
-      },
-      "liabilities": {
-        "current": [{"name": "Accounts payable", "amount": 80}],
-        "non_current": [{"name": "Long-term debt", "amount": 120}]
-      }
-    },
-    {
-      "reporting_period": "2026Q3",
-      "assets": {
-        "current": [{"name": "Cash", "amount": 180}],
-        "non_current": [{"name": "Fixed assets", "amount": 520}]
-      },
-      "liabilities": {
-        "current": [{"name": "Accounts payable", "amount": 90}],
-        "non_current": [{"name": "Long-term debt", "amount": 130}]
-      }
-    }
-  ]
-}
+```text
+sample_data/
+├── {company_name}_2023.json
+├── {company_name}_2024.json
+├── {company_name}_2025.json
+└── {company_name}_2026Q3.json
 ```
+
+Pass two or more files to the same command. Recognized `YYYY` and `YYYYQ1`–`YYYYQ4`
+periods are ordered automatically, so shell expansion order does not affect the report.
+Each file repeats `company`, optional `ticker`, `currency`, and `reporting_period`, then
+records that period's asset and liability items using the normal single-statement schema.
+
+The supplied Orion files each contain all 21 standard asset line items and all 16
+standard liability line items. A real statement may omit unavailable lines because the
+domain model safely defaults missing standard fields to zero.
 
 Time-frame rules:
 
-- Supply at least two periods in chronological order; `YYYY` and `YYYYQ1`–`YYYYQ4` labels are recognized for order checks.
+- Supply at least two single-period JSON files for one company, ticker, and currency.
 - Period labels must be unique. Annual and quarterly periods may be combined, such as `2023`, `2024`, `2025`, and `2026Q3`.
-- When `time_frame` is supplied, `start` and `end` must match the first and last period labels.
-- Every period uses the same asset and liability schema as a single-period report.
-- Percentage change is calculated from the first supplied period to the last. The report does not annualize a partial period such as `2026Q3`.
+- Every file uses the same asset and liability schema as a single-period report.
+- Percentage change is calculated from the earliest supplied period to the latest. The report does not annualize a partial period such as `2026Q3`.
+- The former embedded `periods` array remains readable for backward compatibility, but separate files are the recommended format.
 
 ## Domain model
 
@@ -234,8 +219,13 @@ Implementation-aligned PlantUML package and class diagrams are available in [`do
 from asset_report import FinancialAnalysisApp
 
 output = FinancialAnalysisApp().generate_financial_report(
-    "sample_data/assets.json",
-    "build/financial-report.html",
+    [
+        "sample_data/orion_industrial_group_ltd_2023.json",
+        "sample_data/orion_industrial_group_ltd_2024.json",
+        "sample_data/orion_industrial_group_ltd_2025.json",
+        "sample_data/orion_industrial_group_ltd_2026Q3.json",
+    ],
+    "build/time-frame-report.html",
 )
 print(output)
 ```
@@ -258,7 +248,10 @@ asset_report/             source package
 docs/plantuml/            system and per-layer class diagrams
 sample_data/assets.json   ready-to-run asset and liability example
 sample_data/main_input.json  comprehensive input with all standard fields
-sample_data/time_frame_input.json  2023–2026Q3 trend example
+sample_data/orion_industrial_group_ltd_2023.json   complete 2023 statement
+sample_data/orion_industrial_group_ltd_2024.json   complete 2024 statement
+sample_data/orion_industrial_group_ltd_2025.json   complete 2025 statement
+sample_data/orion_industrial_group_ltd_2026Q3.json complete 2026Q3 statement
 tests/                    unit and integration tests
 build/                    generated example report
 ```
