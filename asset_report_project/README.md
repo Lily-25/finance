@@ -14,16 +14,18 @@ The report has no JavaScript, external fonts, remote stylesheets, or image files
 From this directory, generate the included example:
 
 ```sh
-python3 -m asset_report sample_data/assets.json --output build/financial-report.html
+python3 -m asset_report
 ```
 
-Direct-file execution is also supported:
+With no arguments, the module uses `sample_data/main_input.json` and writes
+`build/main_report.html`. Direct-file execution uses the same defaults:
 
 ```sh
-python3 asset_report/__main__.py sample_data/assets.json --output build/financial-report.html
+python3 asset_report/__main__.py
 ```
 
-Then open `build/asset-report.html` in a browser. Use `--title "Custom page title"` to override the browser-page title.
+Then open `build/main_report.html` in a browser. You can still supply an explicit input,
+output, and title; use `--title "Custom page title"` to override the browser-page title.
 
 Show all command-line options:
 
@@ -47,7 +49,7 @@ The comprehensive [`sample_data/main_input.json`](sample_data/main_input.json) s
 ```sh
 python3 -m asset_report \
   sample_data/main_input.json \
-  --output build/main-input-report.html \
+  --output build/main_report.html \
   --title "Orion 2025 Financial Position Report"
 ```
 
@@ -58,9 +60,18 @@ from asset_report.presentation.cli import main
 
 exit_code = main([
     "sample_data/main_input.json",
-    "--output", "build/main-input-report.html",
+    "--output", "build/main_report.html",
     "--title", "Orion 2025 Financial Position Report",
 ])
+```
+
+Generate the included 2023–2026Q3 time-frame analysis with the same command:
+
+```sh
+python3 -m asset_report \
+  sample_data/time_frame_input.json \
+  --output build/time-frame-report.html \
+  --title "Orion 2023–2026Q3 Trend Report"
 ```
 
 ## Input format
@@ -106,6 +117,51 @@ Rules:
 
 Invalid input produces a concise error and a non-zero exit status. The output file is written atomically so an existing report is not left partially written.
 
+### Time-frame input
+
+For trend analysis, replace the root `reporting_period`, `assets`, and `liabilities` with an ordered `periods` array. The same CLI automatically detects this format:
+
+```json
+{
+  "company": "Example Company Ltd.",
+  "ticker": "EXM",
+  "currency": "USD",
+  "time_frame": {"start": "2023", "end": "2026Q3"},
+  "periods": [
+    {
+      "reporting_period": "2023",
+      "assets": {
+        "current": [{"name": "Cash", "amount": 100}],
+        "non_current": [{"name": "Fixed assets", "amount": 400}]
+      },
+      "liabilities": {
+        "current": [{"name": "Accounts payable", "amount": 80}],
+        "non_current": [{"name": "Long-term debt", "amount": 120}]
+      }
+    },
+    {
+      "reporting_period": "2026Q3",
+      "assets": {
+        "current": [{"name": "Cash", "amount": 180}],
+        "non_current": [{"name": "Fixed assets", "amount": 520}]
+      },
+      "liabilities": {
+        "current": [{"name": "Accounts payable", "amount": 90}],
+        "non_current": [{"name": "Long-term debt", "amount": 130}]
+      }
+    }
+  ]
+}
+```
+
+Time-frame rules:
+
+- Supply at least two periods in chronological order; `YYYY` and `YYYYQ1`–`YYYYQ4` labels are recognized for order checks.
+- Period labels must be unique. Annual and quarterly periods may be combined, such as `2023`, `2024`, `2025`, and `2026Q3`.
+- When `time_frame` is supplied, `start` and `end` must match the first and last period labels.
+- Every period uses the same asset and liability schema as a single-period report.
+- Percentage change is calculated from the first supplied period to the last. The report does not annualize a partial period such as `2026Q3`.
+
 ## Domain model
 
 `Company` contains `name`, optional `ticker`, `currency`, and `reporting_period`. The JSON adapter constructs this model from the root-level fields, while the generated report displays the ticker only when supplied.
@@ -123,6 +179,8 @@ It calculates `total_current_assets`, `total_non_current_assets`, `total_assets`
 - Non-current liabilities: `long_term_debt`, `lease_liabilities`, `deferred_tax_liabilities`, `pension_liabilities`, `provisions`, `deferred_income`, and `other_non_current_liabilities`.
 
 It calculates `total_current_liabilities`, `total_non_current_liabilities`, `total_liabilities`, `component_percentages`, and `percentage_of_total(component)`. `FinancialStatementData` combines `Company`, `AssetStatement`, and `LiabilityStatement`; the analysis also calculates liabilities as a percentage of assets, net assets, and the current ratio. `AssetReportData` and `generate_asset_report(...)` remain available as compatibility names.
+
+`FinancialTimeSeriesData` contains an ordered tuple of `FinancialStatementData` snapshots. `TimeFrameAnalysisResult` compares first and latest totals, percentage changes, net assets, liability-to-asset percentage points, and current ratios across all supplied periods.
 
 ```python
 from asset_report.domain import AssetStatement, LiabilityStatement
@@ -149,6 +207,8 @@ The generated report includes:
 4. Detailed asset and liability tables with classification, amount, composition percentage, and liability share of assets.
 
 All user-provided text is HTML-escaped in both the report and SVG charts.
+
+In time-frame mode, the four charts change to assets versus liabilities, net assets, current ratio, and liabilities-to-assets across periods. The report also includes a period comparison table and the latest-period asset and liability details.
 
 ## Architecture
 
@@ -188,7 +248,7 @@ Run the standard-library test suite from this directory:
 python3 -m unittest discover -s tests -v
 ```
 
-The tests cover domain invariants, malformed asset and liability input, backward-compatible asset-only input, exact totals and ratios, rankings, narratives, SVG accessibility, HTML escaping, export behavior, CLI errors, and complete report generation.
+The tests cover domain invariants, malformed asset and liability input, backward-compatible asset-only input, ordered time frames, exact totals and trend changes, ratios, rankings, narratives, SVG accessibility, HTML escaping, export behavior, CLI errors, and both report modes.
 
 ## Project files
 
@@ -198,6 +258,7 @@ asset_report/             source package
 docs/plantuml/            system and per-layer class diagrams
 sample_data/assets.json   ready-to-run asset and liability example
 sample_data/main_input.json  comprehensive input with all standard fields
+sample_data/time_frame_input.json  2023–2026Q3 trend example
 tests/                    unit and integration tests
 build/                    generated example report
 ```

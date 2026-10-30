@@ -9,6 +9,7 @@ from .analysis import (
     FinancialMetric,
     LiabilityMetric,
     MetricsCalculator,
+    TimeFrameAnalysisResult,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "FinancialMetric",
     "LiabilityMetric",
     "MetricsCalculator",
+    "TimeFrameAnalysisResult",
 ]

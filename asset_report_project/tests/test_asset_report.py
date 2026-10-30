@@ -11,7 +11,11 @@ from decimal import Decimal
 from pathlib import Path
 
 from asset_report.application.app import FinancialAnalysisApp
-from asset_report.business.analysis import AssetAnalysisService, MetricsCalculator
+from asset_report.business.analysis import (
+    AssetAnalysisService,
+    MetricsCalculator,
+    TimeFrameAnalysisResult,
+)
 from asset_report.data_access.json_repository import (
     DataValidationError,
     JSONFinancialStatementRepository,
@@ -21,6 +25,7 @@ from asset_report.domain.models import (
     AssetReportData,
     AssetStatement,
     Company,
+    FinancialTimeSeriesData,
     LiabilityItem,
     LiabilityStatement,
     Money,
@@ -346,6 +351,91 @@ class OutputTests(TemporaryJSONMixin, unittest.TestCase):
         result = ReportFileExporter().export("<html></html>", destination)
         self.assertEqual(result, destination.resolve())
         self.assertEqual(destination.read_text(encoding="utf-8"), "<html></html>")
+
+
+class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
+    def setUp(self) -> None:
+        self.project_root = Path(__file__).resolve().parents[1]
+        self.input_path = self.project_root / "sample_data" / "time_frame_input.json"
+        self.data = JSONFinancialStatementRepository(self.input_path).load()
+        self.assertIsInstance(self.data, FinancialTimeSeriesData)
+        self.result = AssetAnalysisService().analyze(self.data)
+        self.assertIsInstance(self.result, TimeFrameAnalysisResult)
+
+    def test_maps_ordered_financial_periods(self) -> None:
+        self.assertEqual(
+            [statement.reporting_period.label for statement in self.data.statements],
+            ["2023", "2024", "2025", "2026Q3"],
+        )
+        self.assertEqual(self.data.time_frame, "2023 to 2026Q3")
+
+    def test_calculates_time_frame_changes(self) -> None:
+        self.assertEqual(self.result.first.total_assets.amount, Decimal("12000000"))
+        self.assertEqual(self.result.latest.total_assets.amount, Decimal("22000000"))
+        self.assertEqual(
+            self.result.asset_change_percentage.quantize(Decimal("0.1")),
+            Decimal("83.3"),
+        )
+        self.assertEqual(self.result.first.total_liabilities.amount, Decimal("7000000"))
+        self.assertEqual(self.result.latest.total_liabilities.amount, Decimal("9900000"))
+        self.assertEqual(self.result.latest.net_assets, Decimal("12100000"))
+
+    def test_generates_four_time_series_charts(self) -> None:
+        charts = AssetCharts().generate(self.result)
+        self.assertEqual(
+            [chart.title for chart in charts],
+            [
+                "Assets and liabilities over time",
+                "Net assets trend",
+                "Current ratio trend",
+                "Liabilities to assets",
+            ],
+        )
+        for chart in charts:
+            self.assertIn('<svg class="chart-svg"', chart.svg)
+            self.assertIn('role="img"', chart.svg)
+
+    def test_builds_time_frame_report_and_narrative(self) -> None:
+        charts = AssetCharts().generate(self.result)
+        html = ReportBuilder().build(self.result, charts)
+        narrative = " ".join(NarrativeGenerator().generate(self.result))
+        self.assertEqual(html.count('<svg class="chart-svg"'), 4)
+        self.assertIn("Period comparison", html)
+        self.assertIn("2026Q3", html)
+        self.assertIn("83.3%", narrative)
+        self.assertIn("USD 22,000,000.00", narrative)
+
+    def test_rejects_duplicate_period_labels(self) -> None:
+        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload["periods"][1]["reporting_period"] = "2023"
+        with self.assertRaisesRegex(DataValidationError, "unique"):
+            JSONFinancialStatementRepository(self.write_json(payload)).load()
+
+    def test_rejects_time_frame_boundary_mismatch(self) -> None:
+        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload["time_frame"]["end"] = "2026"
+        with self.assertRaisesRegex(DataValidationError, "must match"):
+            JSONFinancialStatementRepository(self.write_json(payload)).load()
+
+    def test_rejects_periods_out_of_order(self) -> None:
+        payload = json.loads(self.input_path.read_text(encoding="utf-8"))
+        payload.pop("time_frame")
+        payload["periods"][0], payload["periods"][1] = (
+            payload["periods"][1],
+            payload["periods"][0],
+        )
+        with self.assertRaisesRegex(DataValidationError, "chronological"):
+            JSONFinancialStatementRepository(self.write_json(payload)).load()
+
+    def test_application_generates_time_frame_report(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        output_path = Path(temp_dir.name) / "time-frame-report.html"
+        generated = FinancialAnalysisApp().generate_financial_report(
+            self.input_path, output_path
+        )
+        self.assertEqual(generated, output_path.resolve())
+        self.assertIn("Time-series analysis", output_path.read_text(encoding="utf-8"))
 
 
 class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):

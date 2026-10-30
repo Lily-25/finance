@@ -7,7 +7,11 @@ from decimal import Decimal
 from html import escape
 from pathlib import Path
 
-from ..business.analysis import FinancialAnalysisResult, FinancialMetric
+from ..business.analysis import (
+    FinancialAnalysisResult,
+    FinancialMetric,
+    TimeFrameAnalysisResult,
+)
 from .charts import Chart
 
 
@@ -18,7 +22,11 @@ def format_money(currency: str, value: Decimal) -> str:
 class NarrativeGenerator:
     """Generate concise observations strictly from calculated report data."""
 
-    def generate(self, result: FinancialAnalysisResult) -> tuple[str, ...]:
+    def generate(
+        self, result: FinancialAnalysisResult | TimeFrameAnalysisResult
+    ) -> tuple[str, ...]:
+        if isinstance(result, TimeFrameAnalysisResult):
+            return self._generate_time_frame(result)
         currency = result.data.currency
         structure = self._asset_structure(result)
 
@@ -51,6 +59,70 @@ class NarrativeGenerator:
             f"leaving net assets of {format_money(currency, result.net_assets)}; {ratio_text}."
         )
         return structure, asset_concentration, liability_structure, position
+
+    def _generate_time_frame(
+        self, result: TimeFrameAnalysisResult
+    ) -> tuple[str, ...]:
+        currency = result.data.currency
+        start = result.data.start_period.label
+        end = result.data.end_period.label
+        asset_pct = self._change_text(result.asset_change_percentage)
+        liability_pct = self._change_text(result.liability_change_percentage)
+        net_asset_pct = self._change_text(result.net_asset_change_percentage)
+        asset_direction = "increased" if result.asset_change >= 0 else "decreased"
+        liability_direction = (
+            "increased" if result.liability_change >= 0 else "decreased"
+        )
+        net_direction = "increased" if result.net_asset_change >= 0 else "decreased"
+
+        assets = (
+            f"Total assets {asset_direction} from "
+            f"{format_money(currency, result.first.total_assets.amount)} in {start} to "
+            f"{format_money(currency, result.latest.total_assets.amount)} in {end}, "
+            f"a change of {asset_pct}."
+        )
+        liabilities = (
+            f"Total liabilities {liability_direction} by {liability_pct} over the same "
+            f"period, while liabilities as a share of assets moved from "
+            f"{result.first.liability_to_assets_percentage:.1f}% to "
+            f"{result.latest.liability_to_assets_percentage:.1f}% "
+            f"({result.liability_ratio_change_points:+.1f} percentage points)."
+        )
+        net_assets = (
+            f"Net assets {net_direction} from "
+            f"{format_money(currency, result.first.net_assets)} to "
+            f"{format_money(currency, result.latest.net_assets)}, a change of "
+            f"{net_asset_pct}."
+        )
+
+        ratios = [
+            (period.data.reporting_period.label, period.current_ratio)
+            for period in result.period_results
+            if period.current_ratio is not None
+        ]
+        if ratios:
+            lowest_label, lowest_ratio = min(ratios, key=lambda item: item[1])
+            latest_ratio = result.latest.current_ratio
+            if latest_ratio is None:
+                liquidity = (
+                    f"The current ratio is not applicable in {end}; the lowest "
+                    f"calculable level was {lowest_ratio:.2f}:1 in {lowest_label}."
+                )
+            else:
+                liquidity = (
+                    f"The current ratio is {latest_ratio:.2f}:1 in {end}; the lowest "
+                    f"reported level was {lowest_ratio:.2f}:1 in {lowest_label}."
+                )
+        else:
+            liquidity = (
+                "No current ratio could be calculated because current liabilities "
+                "were zero in every period."
+            )
+        return assets, liabilities, net_assets, liquidity
+
+    @staticmethod
+    def _change_text(value: Decimal | None) -> str:
+        return "not comparable from a zero base" if value is None else f"{abs(value):.1f}%"
 
     @staticmethod
     def _asset_structure(result: FinancialAnalysisResult) -> str:
@@ -204,10 +276,12 @@ class ReportBuilder:
 
     def build(
         self,
-        result: FinancialAnalysisResult,
+        result: FinancialAnalysisResult | TimeFrameAnalysisResult,
         charts: tuple[Chart, ...],
         report_title: str | None = None,
     ) -> str:
+        if isinstance(result, TimeFrameAnalysisResult):
+            return self._build_time_frame(result, charts, report_title)
         data = result.data
         title = report_title or f"{data.company.name} — Financial Position Report"
         generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -247,6 +321,104 @@ class ReportBuilder:
   <footer class="footer">Generated {generated} · Amounts shown in {escape(data.currency)}</footer>
 </main>"""
         return self.template.render(title, body)
+
+    def _build_time_frame(
+        self,
+        result: TimeFrameAnalysisResult,
+        charts: tuple[Chart, ...],
+        report_title: str | None,
+    ) -> str:
+        data = result.data
+        title = report_title or f"{data.company.name} — Time-Frame Financial Report"
+        generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        narratives = self.narrative_generator.generate(result)
+        ticker_meta = (
+            f"<span><strong>Ticker</strong> · {escape(data.company.ticker)}</span>"
+            if data.company.ticker
+            else ""
+        )
+        latest = result.latest
+        body = f"""<main class="report">
+  <header class="hero">
+    <p class="eyebrow">Financial analysis · Time-frame comparison</p>
+    <h1>{escape(data.company.name)}</h1>
+    <div class="hero-meta">
+      <span><strong>Time frame</strong> · {escape(data.time_frame)}</span>
+      <span><strong>Periods</strong> · {len(result.period_results)}</span>
+      <span><strong>Currency</strong> · {escape(data.currency)}</span>
+      {ticker_meta}
+    </div>
+  </header>
+  {self._time_frame_kpis(result)}
+  <section class="section" aria-labelledby="interpretation-heading">
+    <h2 id="interpretation-heading" class="section-heading">Trend interpretation</h2>
+    <div class="panel"><ul class="insights">{''.join(f'<li>{escape(item)}</li>' for item in narratives)}</ul></div>
+  </section>
+  <section class="section" aria-labelledby="visual-heading">
+    <h2 id="visual-heading" class="section-heading">Time-series analysis</h2>
+    <div class="chart-grid">{''.join(self._chart_card(chart) for chart in charts)}</div>
+  </section>
+  <section class="section" aria-labelledby="period-heading">
+    <h2 id="period-heading" class="section-heading">Period comparison</h2>
+    <div class="panel table-wrap">{self._time_frame_table(result)}</div>
+  </section>
+  <section class="section" aria-labelledby="latest-asset-heading">
+    <h2 id="latest-asset-heading" class="section-heading">Latest asset detail · {escape(latest.data.reporting_period.label)}</h2>
+    <div class="panel table-wrap">{self._asset_table(latest)}</div>
+  </section>
+  <section class="section" aria-labelledby="latest-liability-heading">
+    <h2 id="latest-liability-heading" class="section-heading">Latest liability detail · {escape(latest.data.reporting_period.label)}</h2>
+    <div class="panel table-wrap">{self._liability_table(latest)}</div>
+  </section>
+  <footer class="footer">Generated {generated} · Amounts shown in {escape(data.currency)}</footer>
+</main>"""
+        return self.template.render(title, body)
+
+    @staticmethod
+    def _time_frame_kpis(result: TimeFrameAnalysisResult) -> str:
+        currency = escape(result.data.currency)
+        latest = result.latest
+        asset_change = (
+            "N/A"
+            if result.asset_change_percentage is None
+            else f"{result.asset_change_percentage:+.1f}%"
+        )
+        ratio = (
+            f"{latest.current_ratio:.2f}:1"
+            if latest.current_ratio is not None
+            else "Not applicable"
+        )
+        return f"""<section class="kpis" aria-label="Latest period and trend totals">
+  <div class="kpi"><span class="kpi-label">Latest assets</span><strong class="kpi-value">{currency} {latest.total_assets.amount:,.2f}</strong><span class="kpi-note">{asset_change} over the time frame</span></div>
+  <div class="kpi"><span class="kpi-label">Latest liabilities</span><strong class="kpi-value">{currency} {latest.total_liabilities.amount:,.2f}</strong><span class="kpi-note">{latest.liability_to_assets_percentage:.1f}% of assets</span></div>
+  <div class="kpi"><span class="kpi-label">Latest net assets</span><strong class="kpi-value">{currency} {latest.net_assets:,.2f}</strong><span class="kpi-note">Assets less liabilities</span></div>
+  <div class="kpi"><span class="kpi-label">Latest current ratio</span><strong class="kpi-value">{ratio}</strong><span class="kpi-note">At {escape(latest.data.reporting_period.label)}</span></div>
+</section>"""
+
+    @staticmethod
+    def _time_frame_table(result: TimeFrameAnalysisResult) -> str:
+        rows: list[str] = []
+        currency = escape(result.data.currency)
+        for period in result.period_results:
+            ratio = (
+                f"{period.current_ratio:.2f}:1"
+                if period.current_ratio is not None
+                else "N/A"
+            )
+            rows.append(
+                f"""<tr>
+  <td>{escape(period.data.reporting_period.label)}</td>
+  <td class="number">{currency} {period.total_assets.amount:,.2f}</td>
+  <td class="number">{currency} {period.total_liabilities.amount:,.2f}</td>
+  <td class="number">{currency} {period.net_assets:,.2f}</td>
+  <td class="number">{period.liability_to_assets_percentage:.1f}%</td>
+  <td class="number">{ratio}</td>
+</tr>"""
+            )
+        return f"""<table>
+  <thead><tr><th>Period</th><th class="number">Assets</th><th class="number">Liabilities</th><th class="number">Net assets</th><th class="number">Liabilities / assets</th><th class="number">Current ratio</th></tr></thead>
+  <tbody>{''.join(rows)}</tbody>
+</table>"""
 
     @staticmethod
     def _kpis(result: FinancialAnalysisResult) -> str:

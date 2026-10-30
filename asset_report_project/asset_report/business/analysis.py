@@ -9,6 +9,7 @@ from typing import Iterable
 from ..domain.models import (
     AssetItem,
     FinancialStatementData,
+    FinancialTimeSeriesData,
     LiabilityItem,
     Money,
 )
@@ -26,6 +27,12 @@ class MetricsCalculator:
         if denominator.amount == 0:
             return None
         return numerator.amount / denominator.amount
+
+    @staticmethod
+    def change_percentage(start: Decimal, end: Decimal) -> Decimal | None:
+        if start == 0:
+            return None
+        return ((end - start) / abs(start)) * Decimal("100")
 
 
 @dataclass(frozen=True)
@@ -98,11 +105,78 @@ class FinancialAnalysisResult:
 AssetAnalysisResult = FinancialAnalysisResult
 
 
+@dataclass(frozen=True)
+class TimeFrameAnalysisResult:
+    data: FinancialTimeSeriesData
+    period_results: tuple[FinancialAnalysisResult, ...]
+
+    @property
+    def first(self) -> FinancialAnalysisResult:
+        return self.period_results[0]
+
+    @property
+    def latest(self) -> FinancialAnalysisResult:
+        return self.period_results[-1]
+
+    @property
+    def asset_change(self) -> Decimal:
+        return self.latest.total_assets.amount - self.first.total_assets.amount
+
+    @property
+    def asset_change_percentage(self) -> Decimal | None:
+        return MetricsCalculator.change_percentage(
+            self.first.total_assets.amount, self.latest.total_assets.amount
+        )
+
+    @property
+    def liability_change(self) -> Decimal:
+        return self.latest.total_liabilities.amount - self.first.total_liabilities.amount
+
+    @property
+    def liability_change_percentage(self) -> Decimal | None:
+        return MetricsCalculator.change_percentage(
+            self.first.total_liabilities.amount,
+            self.latest.total_liabilities.amount,
+        )
+
+    @property
+    def net_asset_change(self) -> Decimal:
+        return self.latest.net_assets - self.first.net_assets
+
+    @property
+    def net_asset_change_percentage(self) -> Decimal | None:
+        return MetricsCalculator.change_percentage(
+            self.first.net_assets, self.latest.net_assets
+        )
+
+    @property
+    def liability_ratio_change_points(self) -> Decimal:
+        return (
+            self.latest.liability_to_assets_percentage
+            - self.first.liability_to_assets_percentage
+        )
+
+
 class FinancialAnalysisService:
     def __init__(self, calculator: MetricsCalculator | None = None) -> None:
         self.calculator = calculator or MetricsCalculator()
 
-    def analyze(self, data: FinancialStatementData) -> FinancialAnalysisResult:
+    def analyze(
+        self, data: FinancialStatementData | FinancialTimeSeriesData
+    ) -> FinancialAnalysisResult | TimeFrameAnalysisResult:
+        if isinstance(data, FinancialTimeSeriesData):
+            return TimeFrameAnalysisResult(
+                data=data,
+                period_results=tuple(
+                    self._analyze_statement(statement)
+                    for statement in data.statements
+                ),
+            )
+        return self._analyze_statement(data)
+
+    def _analyze_statement(
+        self, data: FinancialStatementData
+    ) -> FinancialAnalysisResult:
         current_total = data.assets.total_current_assets
         non_current_total = data.assets.total_non_current_assets
         total_assets = data.assets.total_assets

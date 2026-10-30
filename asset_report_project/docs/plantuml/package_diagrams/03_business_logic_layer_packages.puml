@@ -24,7 +24,7 @@ AnalysisModule ..> ModelsModule : asset/liability items + FinancialStatementData
 note bottom of Business
   analysis.py contains MetricsCalculator,
   FinancialMetric, FinancialAnalysisResult, and
-  FinancialAnalysisService.
+  TimeFrameAnalysisResult plus FinancialAnalysisService.
 
   Paired class diagram:
   03_business_logic_layer_classes.puml

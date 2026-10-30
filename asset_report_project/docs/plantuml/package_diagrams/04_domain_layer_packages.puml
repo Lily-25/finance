@@ -21,7 +21,8 @@ package "asset_report.domain" as Domain #E3F0F8 {
 
 note bottom of Domain
   models.py defines Company, Money, ReportingPeriod,
-  asset and liability items/statements, and FinancialStatementData.
+  asset and liability items/statements, FinancialStatementData,
+  and the ordered FinancialTimeSeriesData aggregate.
 
   repositories.py defines the
   FinancialStatementRepository protocol.

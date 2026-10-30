@@ -27,8 +27,8 @@ ChartsModule ..> AnalysisModule : results + metrics
 ReportingModule ..> AnalysisModule : results + metrics
 
 note bottom of Output
-  charts.py generates four accessible asset/liability SVGs.
-  reporting.py creates financial narrative, HTML, and the file export.
+  charts.py generates four accessible snapshot or trend SVGs.
+  reporting.py creates mode-specific narrative, HTML, and export.
 
   Paired class diagram:
   06_output_layer_classes.puml

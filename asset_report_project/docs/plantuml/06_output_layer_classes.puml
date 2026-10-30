@@ -17,11 +17,14 @@ package "Visualization\nasset_report.output.charts" #EEE5FA {
   }
 
   interface ChartGenerator <<abstract>> {
-    + generate(result: FinancialAnalysisResult): tuple(Chart)
+    + generate(result: FinancialAnalysisResult or TimeFrameAnalysisResult): tuple(Chart)
   }
 
   class FinancialCharts {
-    + generate(result: FinancialAnalysisResult): tuple(Chart)
+    + generate(result: FinancialAnalysisResult or TimeFrameAnalysisResult): tuple(Chart)
+    - _time_frame_charts(result: TimeFrameAnalysisResult): tuple(Chart)
+    - _comparison_bars(result: TimeFrameAnalysisResult): str
+    - _line_chart(title, labels, values, color, value_format): str
     - _structure_donut(title, total_label, amounts, percentages, currency, labels): str
     - _horizontal_bars(metrics, title, percentage_basis): str
     - _empty_chart(title: str, message: str): str
@@ -33,7 +36,8 @@ package "Visualization\nasset_report.output.charts" #EEE5FA {
 
 package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
   class NarrativeGenerator {
-    + generate(result: FinancialAnalysisResult): tuple(str)
+    + generate(result: FinancialAnalysisResult or TimeFrameAnalysisResult): tuple(str)
+    - _generate_time_frame(result: TimeFrameAnalysisResult): tuple(str)
   }
 
   class ReportTemplate {
@@ -46,6 +50,9 @@ package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
     - template: ReportTemplate
     + __init__(narrative_generator = None, template = None)
     + build(result, charts, report_title = None): str
+    - _build_time_frame(result, charts, report_title): str
+    - {static} _time_frame_kpis(result): str
+    - {static} _time_frame_table(result): str
     - {static} _kpis(result): str
     - {static} _chart_card(chart: Chart): str
     - _asset_table(result): str
@@ -61,25 +68,28 @@ package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
 package "Business Logic Layer" #E2F3E7 {
   class FinancialAnalysisResult
   class FinancialMetric
+  class TimeFrameAnalysisResult
 }
 
 FinancialCharts ..|> ChartGenerator
 FinancialCharts ..> FinancialAnalysisResult : consumes
+FinancialCharts ..> TimeFrameAnalysisResult : consumes
 FinancialCharts ..> FinancialMetric : visualizes
 FinancialCharts ..> Chart : creates four
 
 NarrativeGenerator ..> FinancialAnalysisResult : interprets
+NarrativeGenerator ..> TimeFrameAnalysisResult : interprets
 ReportBuilder *-- NarrativeGenerator
 ReportBuilder *-- ReportTemplate
 ReportBuilder ..> FinancialAnalysisResult : summarizes
+ReportBuilder ..> TimeFrameAnalysisResult : summarizes
 ReportBuilder ..> Chart : embeds SVG
 
 note right of FinancialCharts
-  Produces four inline, accessible SVGs:
-  1. Asset structure donut
-  2. Liability structure donut
-  3. Largest asset categories
-  4. Largest liability categories
+  Produces four accessible SVGs for either mode.
+  Snapshot: structure and category charts.
+  Time frame: totals, net assets,
+  current ratio, and leverage trends.
 end note
 
 note right of ReportFileExporter

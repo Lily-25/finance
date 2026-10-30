@@ -105,11 +105,20 @@ package "Domain Models\nasset_report.domain.models" #E3F0F8 {
     + currency: str {property}
     + reporting_period: ReportingPeriod {property}
   }
+
+  class FinancialTimeSeriesData <<frozen aggregate>> {
+    + company: Company
+    + statements: tuple(FinancialStatementData)
+    + start_period: ReportingPeriod {property}
+    + end_period: ReportingPeriod {property}
+    + time_frame: str {property}
+    + currency: str {property}
+  }
 }
 
 package "Repository Contracts\nasset_report.domain.repositories" #EAF4FA {
   interface FinancialStatementRepository <<Protocol>> {
-    + load(): FinancialStatementData
+    + load(): FinancialStatementData or FinancialTimeSeriesData
   }
 }
 
@@ -117,6 +126,8 @@ Company *-- "1" ReportingPeriod
 FinancialStatementData *-- "1" Company
 FinancialStatementData *-- "1" AssetStatement
 FinancialStatementData *-- "1" LiabilityStatement
+FinancialTimeSeriesData *-- "1" Company
+FinancialTimeSeriesData *-- "2..*" FinancialStatementData
 AssetStatement *-- "21" Money : standard line items
 AssetStatement *-- "0..*" AssetItem : additional lines
 AssetItem *-- "1" Money
@@ -124,6 +135,7 @@ LiabilityStatement *-- "16" Money : standard line items
 LiabilityStatement *-- "0..*" LiabilityItem : additional lines
 LiabilityItem *-- "1" Money
 FinancialStatementRepository ..> FinancialStatementData : returns
+FinancialStatementRepository ..> FinancialTimeSeriesData : returns
 
 note right of AssetStatement
   Every standard line item defaults to Money.zero().
@@ -134,6 +146,11 @@ end note
 note right of LiabilityStatement
   Every standard line item defaults to Money.zero().
   Totals and percentages are safe when all values are zero.
+end note
+
+note right of FinancialTimeSeriesData
+  Period labels are unique and chronological.
+  All statements share company, ticker, and currency.
 end note
 
 @enduml

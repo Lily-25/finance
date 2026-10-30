@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
+import re
 from typing import ClassVar, Iterable
 
 
@@ -538,6 +539,66 @@ class FinancialStatementData:
     @property
     def reporting_period(self) -> ReportingPeriod:
         return self.company.reporting_period
+
+
+@dataclass(frozen=True)
+class FinancialTimeSeriesData:
+    """Chronologically ordered financial statements for one company."""
+
+    company: Company
+    statements: tuple[FinancialStatementData, ...]
+
+    def __post_init__(self) -> None:
+        statements = tuple(self.statements)
+        if len(statements) < 2:
+            raise ValueError("A time frame requires at least two financial periods")
+
+        labels = [statement.reporting_period.label for statement in statements]
+        normalized_labels = [label.casefold() for label in labels]
+        if len(set(normalized_labels)) != len(normalized_labels):
+            raise ValueError("Financial period labels must be unique")
+
+        keys = [self._period_key(label) for label in labels]
+        if all(key is not None for key in keys):
+            comparable_keys = [key for key in keys if key is not None]
+            if comparable_keys != sorted(comparable_keys) or len(set(comparable_keys)) != len(
+                comparable_keys
+            ):
+                raise ValueError("Financial periods must be in chronological order")
+
+        for statement in statements:
+            if statement.company.name != self.company.name:
+                raise ValueError("All periods must belong to the same company")
+            if statement.company.currency != self.company.currency:
+                raise ValueError("All periods must use the same currency")
+            if statement.company.ticker != self.company.ticker:
+                raise ValueError("All periods must use the same ticker")
+        object.__setattr__(self, "statements", statements)
+
+    @staticmethod
+    def _period_key(label: str) -> tuple[int, int] | None:
+        match = re.fullmatch(r"(\d{4})(?:\s*Q([1-4]))?", label.strip(), re.IGNORECASE)
+        if not match:
+            return None
+        year = int(match.group(1))
+        quarter = int(match.group(2)) if match.group(2) else 4
+        return year, quarter
+
+    @property
+    def start_period(self) -> ReportingPeriod:
+        return self.statements[0].reporting_period
+
+    @property
+    def end_period(self) -> ReportingPeriod:
+        return self.statements[-1].reporting_period
+
+    @property
+    def time_frame(self) -> str:
+        return f"{self.start_period.label} to {self.end_period.label}"
+
+    @property
+    def currency(self) -> str:
+        return self.company.currency
 
 
 class AssetReportData(FinancialStatementData):

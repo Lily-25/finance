@@ -27,6 +27,7 @@ package "Business Logic Layer" #E2F3E7 {
   class FinancialAnalysisService
   class FinancialMetric <<dataclass>>
   class FinancialAnalysisResult <<dataclass>>
+  class TimeFrameAnalysisResult <<dataclass>>
 }
 
 package "Domain Layer" #E3F0F8 {
@@ -38,6 +39,7 @@ package "Domain Layer" #E3F0F8 {
   class LiabilityItem <<entity>>
   class LiabilityStatement <<entity>>
   class FinancialStatementData <<aggregate>>
+  class FinancialTimeSeriesData <<aggregate>>
   interface FinancialStatementRepository
 }
 
@@ -82,17 +84,23 @@ JSONReader ..> DataValidationError : raises
 FinancialDataValidator ..> DataValidationError : raises
 FinancialDataValidator ..> Money : validates
 FinancialStatementMapper ..> FinancialStatementData : maps
+FinancialStatementMapper ..> FinancialTimeSeriesData : maps
 
 FinancialAnalysisService *-- MetricsCalculator
 FinancialAnalysisService ..> FinancialStatementData
+FinancialAnalysisService ..> FinancialTimeSeriesData
 FinancialAnalysisService ..> FinancialAnalysisResult : creates
+FinancialAnalysisService ..> TimeFrameAnalysisResult : creates
 FinancialAnalysisResult *-- "0..*" FinancialMetric
+TimeFrameAnalysisResult *-- "2..*" FinancialAnalysisResult
 FinancialMetric --> Money
 
 Company *-- ReportingPeriod
 FinancialStatementData *-- Company
 FinancialStatementData *-- AssetStatement
 FinancialStatementData *-- LiabilityStatement
+FinancialTimeSeriesData *-- Company
+FinancialTimeSeriesData *-- "2..*" FinancialStatementData
 AssetStatement *-- "0..*" AssetItem : current assets
 AssetStatement *-- "0..*" AssetItem : non-current assets
 AssetItem *-- Money
@@ -100,15 +108,19 @@ LiabilityStatement *-- "0..*" LiabilityItem : current liabilities
 LiabilityStatement *-- "0..*" LiabilityItem : non-current liabilities
 LiabilityItem *-- Money
 FinancialStatementRepository ..> FinancialStatementData
+FinancialStatementRepository ..> FinancialTimeSeriesData
 
 FinancialCharts ..|> ChartGenerator
 FinancialCharts ..> FinancialAnalysisResult
+FinancialCharts ..> TimeFrameAnalysisResult
 FinancialCharts ..> Chart : creates four
 ReportBuilder *-- NarrativeGenerator
 ReportBuilder *-- ReportTemplate
 ReportBuilder ..> FinancialAnalysisResult
+ReportBuilder ..> TimeFrameAnalysisResult
 ReportBuilder ..> Chart
 NarrativeGenerator ..> FinancialAnalysisResult
+NarrativeGenerator ..> TimeFrameAnalysisResult
 
 note right of GenerateFinancialReport
   Coordinates the complete pipeline:

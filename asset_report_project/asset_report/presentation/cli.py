@@ -25,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="output HTML path (default: build/financial-report.html)",
     )
     parser.add_argument("--title", help="optional browser-page title")
-    parser.add_argument("--version", action="version", version="financial-report 2.0.0")
+    parser.add_argument("--version", action="version", version="financial-report 2.1.0")
     return parser
 
 

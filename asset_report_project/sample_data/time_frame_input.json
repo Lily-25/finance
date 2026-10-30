@@ -1,0 +1,111 @@
+{
+  "company": "Orion Industrial Group Ltd.",
+  "ticker": "OIG",
+  "currency": "USD",
+  "time_frame": {
+    "start": "2023",
+    "end": "2026Q3"
+  },
+  "periods": [
+    {
+      "reporting_period": "2023",
+      "assets": {
+        "current": [
+          {"name": "Cash and cash equivalents", "amount": 1200000},
+          {"name": "Accounts receivable", "amount": 1300000},
+          {"name": "Inventory", "amount": 1500000}
+        ],
+        "non_current": [
+          {"name": "Fixed assets", "amount": 7000000},
+          {"name": "Intangible assets", "amount": 1000000}
+        ]
+      },
+      "liabilities": {
+        "current": [
+          {"name": "Accounts payable", "amount": 1500000},
+          {"name": "Short-term debt", "amount": 1000000}
+        ],
+        "non_current": [
+          {"name": "Long-term debt", "amount": 4000000},
+          {"name": "Lease liabilities", "amount": 500000}
+        ]
+      }
+    },
+    {
+      "reporting_period": "2024",
+      "assets": {
+        "current": [
+          {"name": "Cash and cash equivalents", "amount": 1500000},
+          {"name": "Accounts receivable", "amount": 1600000},
+          {"name": "Inventory", "amount": 1900000}
+        ],
+        "non_current": [
+          {"name": "Fixed assets", "amount": 7800000},
+          {"name": "Intangible assets", "amount": 1200000}
+        ]
+      },
+      "liabilities": {
+        "current": [
+          {"name": "Accounts payable", "amount": 1600000},
+          {"name": "Short-term debt", "amount": 1100000}
+        ],
+        "non_current": [
+          {"name": "Long-term debt", "amount": 4000000},
+          {"name": "Lease liabilities", "amount": 600000}
+        ]
+      }
+    },
+    {
+      "reporting_period": "2025",
+      "assets": {
+        "current": [
+          {"name": "Cash and cash equivalents", "amount": 1700000},
+          {"name": "Accounts receivable", "amount": 2200000},
+          {"name": "Inventory", "amount": 2600000}
+        ],
+        "non_current": [
+          {"name": "Fixed assets", "amount": 10500000},
+          {"name": "Intangible assets", "amount": 1500000},
+          {"name": "Long-term investments", "amount": 1500000}
+        ]
+      },
+      "liabilities": {
+        "current": [
+          {"name": "Accounts payable", "amount": 2000000},
+          {"name": "Short-term debt", "amount": 1000000},
+          {"name": "Accrued expenses", "amount": 500000}
+        ],
+        "non_current": [
+          {"name": "Long-term debt", "amount": 5000000},
+          {"name": "Lease liabilities", "amount": 1000000}
+        ]
+      }
+    },
+    {
+      "reporting_period": "2026Q3",
+      "assets": {
+        "current": [
+          {"name": "Cash and cash equivalents", "amount": 2000000},
+          {"name": "Accounts receivable", "amount": 2400000},
+          {"name": "Inventory", "amount": 2800000}
+        ],
+        "non_current": [
+          {"name": "Fixed assets", "amount": 11500000},
+          {"name": "Intangible assets", "amount": 1600000},
+          {"name": "Long-term investments", "amount": 1700000}
+        ]
+      },
+      "liabilities": {
+        "current": [
+          {"name": "Accounts payable", "amount": 2100000},
+          {"name": "Short-term debt", "amount": 1000000},
+          {"name": "Accrued expenses", "amount": 600000}
+        ],
+        "non_current": [
+          {"name": "Long-term debt", "amount": 5100000},
+          {"name": "Lease liabilities", "amount": 1100000}
+        ]
+      }
+    }
+  ]
+}
