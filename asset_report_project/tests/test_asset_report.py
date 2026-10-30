@@ -476,11 +476,21 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         output_path = Path(temp_dir.name) / "time-frame-report.html"
-        generated = FinancialAnalysisApp().generate_financial_report(
+        generated = FinancialAnalysisApp().generate_time_frame_report(
             self.input_paths, output_path
         )
         self.assertEqual(generated, output_path.resolve())
         self.assertIn("Time-series analysis", output_path.read_text(encoding="utf-8"))
+
+    def test_application_exposes_time_frame_analysis(self) -> None:
+        result = FinancialAnalysisApp().analyze_time_frame(self.input_paths)
+        self.assertIsInstance(result, TimeFrameAnalysisResult)
+        self.assertEqual(result.data.time_frame, "2023 to 2026Q3")
+        self.assertEqual(result.latest.total_assets.amount, Decimal("22000000"))
+
+    def test_time_frame_facade_requires_two_period_files(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least two"):
+            FinancialAnalysisApp().analyze_time_frame(self.input_paths[:1])
 
 
 class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):

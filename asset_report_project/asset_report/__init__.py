@@ -3,4 +3,4 @@
 from .application.app import FinancialAnalysisApp
 
 __all__ = ["FinancialAnalysisApp"]
-__version__ = "2.2.0"
+__version__ = "2.3.0"

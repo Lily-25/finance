@@ -67,6 +67,8 @@ CLI ..> FinancialAnalysisApp : invokes
 FinancialAnalysisApp *-- ApplicationConfig
 FinancialAnalysisApp *-- DependencyContainer
 FinancialAnalysisApp ..> JSONFinancialStatementRepository : one or more JSON paths
+FinancialAnalysisApp ..> FinancialAnalysisService : explicit analysis API
+FinancialAnalysisApp ..> TimeFrameAnalysisResult : returns
 DependencyContainer ..> GenerateFinancialReport : assembles
 
 GenerateFinancialReport --> FinancialStatementRepository : loads

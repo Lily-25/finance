@@ -12,9 +12,11 @@ skinparam classAttributeIconSize 0
 package "Application Facade and Configuration\nasset_report.application.app" #E3EEFF {
   class ApplicationConfig <<frozen dataclass>> {
     + default_output: Path = build/financial-report.html
+    + default_time_frame_output: Path = build/time-frame-report.html
   }
 
   class DependencyContainer {
+    + financial_analysis_service(): FinancialAnalysisService
     + generate_financial_report(): GenerateFinancialReport
     + generate_asset_report(): GenerateFinancialReport
   }
@@ -23,8 +25,12 @@ package "Application Facade and Configuration\nasset_report.application.app" #E3
     - config: ApplicationConfig
     - container: DependencyContainer
     + __init__(config: ApplicationConfig = None, container: DependencyContainer = None)
+    + analyze_financial_data(input_paths): FinancialAnalysisResult or TimeFrameAnalysisResult
+    + analyze_time_frame(input_paths): TimeFrameAnalysisResult
     + generate_financial_report(input_paths, output_path = None, title = None): Path
+    + generate_time_frame_report(input_paths, output_path = None, title = None): Path
     + generate_asset_report(input_paths, output_path = None, title = None): Path
+    - {static} _require_period_paths(input_paths): tuple
   }
 }
 
@@ -41,6 +47,8 @@ package "Use Cases\nasset_report.application.use_cases" #E9F0FF {
 
 package "Business Logic Layer" #E2F3E7 {
   class FinancialAnalysisService
+  class FinancialAnalysisResult <<frozen dataclass>>
+  class TimeFrameAnalysisResult <<frozen dataclass>>
 }
 
 package "Domain Layer" #E3F0F8 {
@@ -62,6 +70,9 @@ FinancialAnalysisApp *-- ApplicationConfig
 FinancialAnalysisApp *-- DependencyContainer
 FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates from one or more paths
 FinancialAnalysisApp ..> GenerateFinancialReport : requests
+FinancialAnalysisApp ..> FinancialAnalysisService : requests direct analysis
+FinancialAnalysisApp ..> FinancialAnalysisResult : returns
+FinancialAnalysisApp ..> TimeFrameAnalysisResult : returns
 
 DependencyContainer ..> GenerateFinancialReport : assembles
 DependencyContainer ..> FinancialAnalysisService : creates

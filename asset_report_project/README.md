@@ -218,17 +218,31 @@ Implementation-aligned PlantUML package and class diagrams are available in [`do
 ```python
 from asset_report import FinancialAnalysisApp
 
-output = FinancialAnalysisApp().generate_financial_report(
-    [
-        "sample_data/orion_industrial_group_ltd_2023.json",
-        "sample_data/orion_industrial_group_ltd_2024.json",
-        "sample_data/orion_industrial_group_ltd_2025.json",
-        "sample_data/orion_industrial_group_ltd_2026Q3.json",
-    ],
+period_files = [
+    "sample_data/orion_industrial_group_ltd_2023.json",
+    "sample_data/orion_industrial_group_ltd_2024.json",
+    "sample_data/orion_industrial_group_ltd_2025.json",
+    "sample_data/orion_industrial_group_ltd_2026Q3.json",
+]
+
+app = FinancialAnalysisApp()
+analysis = app.analyze_time_frame(period_files)
+print(analysis.data.time_frame)
+print(analysis.asset_change_percentage)
+print(analysis.liability_change_percentage)
+print(analysis.net_asset_change)
+
+output = app.generate_time_frame_report(
+    period_files,
     "build/time-frame-report.html",
 )
 print(output)
 ```
+
+`analyze_financial_data(...)` remains the general-purpose API for either a single
+statement or multiple period files. `analyze_time_frame(...)` and
+`generate_time_frame_report(...)` explicitly require at least two period files and
+return time-frame-specific results or output.
 
 ## Tests
 

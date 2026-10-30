@@ -18,7 +18,10 @@ package "Presentation Layer\nasset_report.presentation.cli" #DCEBFA {
 
 package "Application Layer" #E3EEFF {
   class FinancialAnalysisApp {
+    + analyze_financial_data(input_paths): FinancialAnalysisResult or TimeFrameAnalysisResult
+    + analyze_time_frame(input_paths): TimeFrameAnalysisResult
     + generate_financial_report(input_paths, output_path, title): Path
+    + generate_time_frame_report(input_paths, output_path, title): Path
     + generate_asset_report(input_paths, output_path, title): Path
   }
 }
