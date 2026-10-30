@@ -1,0 +1,88 @@
+@startuml OutputLayerClasses
+
+title Asset Report Generator - Output Layer Classes
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+package "Visualization\nasset_report.output.charts" #EEE5FA {
+  class Chart <<frozen dataclass>> {
+    + title: str
+    + subtitle: str
+    + svg: str
+  }
+
+  interface ChartGenerator <<abstract>> {
+    + generate(result: AssetAnalysisResult): tuple(Chart)
+  }
+
+  class AssetCharts {
+    + generate(result: AssetAnalysisResult): tuple(Chart)
+    - _structure_donut(result): str
+    - _horizontal_bars(metrics, title, percentage_basis): str
+    - _empty_chart(title: str): str
+    - _legend_row(x, y, color, label, value): str
+    - {static} _percent(value: Decimal): str
+    - {static} _amount(value: Decimal): str
+  }
+}
+
+package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
+  class NarrativeGenerator {
+    + generate(result: AssetAnalysisResult): tuple(str)
+  }
+
+  class ReportTemplate {
+    + CSS: str
+    + render(title: str, body: str): str
+  }
+
+  class ReportBuilder {
+    - narrative_generator: NarrativeGenerator
+    - template: ReportTemplate
+    + __init__(narrative_generator = None, template = None)
+    + build(result, charts, report_title = None): str
+    - {static} _kpis(result): str
+    - {static} _chart_card(chart: Chart): str
+    - {static} _table(result): str
+  }
+
+  class ReportFileExporter {
+    + export(html: str, destination): Path
+  }
+}
+
+package "Business Logic Layer" #E2F3E7 {
+  class AssetAnalysisResult
+  class AssetMetric
+}
+
+AssetCharts ..|> ChartGenerator
+AssetCharts ..> AssetAnalysisResult : consumes
+AssetCharts ..> AssetMetric : visualizes
+AssetCharts ..> Chart : creates four
+
+NarrativeGenerator ..> AssetAnalysisResult : interprets
+ReportBuilder *-- NarrativeGenerator
+ReportBuilder *-- ReportTemplate
+ReportBuilder ..> AssetAnalysisResult : summarizes
+ReportBuilder ..> Chart : embeds SVG
+
+note right of AssetCharts
+  Produces four inline, accessible SVGs:
+  1. Asset structure donut
+  2. Current asset composition
+  3. Non-current asset composition
+  4. Largest asset categories
+end note
+
+note right of ReportFileExporter
+  Creates parent directories and writes
+  through a temporary file before replace.
+end note
+
+@enduml

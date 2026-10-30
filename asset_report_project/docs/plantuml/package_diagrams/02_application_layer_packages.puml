@@ -1,0 +1,53 @@
+@startuml ApplicationLayerPackages
+
+title Asset Report Generator - Application Layer Packages
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+package "asset_report.application" as Application #E3EEFF {
+  [app.py] as AppModule
+  [use_cases.py] as UseCasesModule
+  AppModule ..> UseCasesModule : imports
+}
+
+package "asset_report.business" as Business #E2F3E7 {
+  [analysis.py] as AnalysisModule
+}
+
+package "asset_report.domain" as Domain #E3F0F8 {
+  [repositories.py] as RepositoriesModule
+}
+
+package "asset_report.data_access" as DataAccess #FFF0DA {
+  [json_repository.py] as JSONRepositoryModule
+}
+
+package "asset_report.output" as Output #EEE5FA {
+  [charts.py] as ChartsModule
+  [reporting.py] as ReportingModule
+}
+
+AppModule ..> AnalysisModule : service
+AppModule ..> JSONRepositoryModule : adapter
+AppModule ..> ChartsModule : implementation
+AppModule ..> ReportingModule : builder + exporter
+
+UseCasesModule ..> AnalysisModule : service
+UseCasesModule ..> RepositoriesModule : repository contract
+UseCasesModule ..> ChartsModule : chart contract
+UseCasesModule ..> ReportingModule : build + export
+
+note right of Application
+  app.py provides the facade and dependency container.
+  use_cases.py coordinates the report pipeline.
+
+  Paired class diagram:
+  02_application_layer_classes.puml
+end note
+
+@enduml

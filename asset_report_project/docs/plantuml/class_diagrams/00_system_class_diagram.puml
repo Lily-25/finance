@@ -1,0 +1,125 @@
+@startuml AssetReportSystemClasses
+
+title Asset Report Generator - System Class Diagram
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 35
+skinparam ranksep 48
+
+package "Presentation Layer" #DCEBFA {
+  class CLI <<module>>
+}
+
+package "Application Layer" #E3EEFF {
+  class ApplicationConfig <<dataclass>>
+  class DependencyContainer
+  class FinancialAnalysisApp
+  class GenerateAssetReport
+}
+
+package "Business Logic Layer" #E2F3E7 {
+  class MetricsCalculator
+  class AssetAnalysisService
+  class AssetMetric <<dataclass>>
+  class AssetAnalysisResult <<dataclass>>
+}
+
+package "Domain Layer" #E3F0F8 {
+  class Money <<value object>>
+  class ReportingPeriod <<value object>>
+  class Company <<entity>>
+  class AssetItem <<entity>>
+  class AssetStatement <<entity>>
+  class LiabilityItem <<entity>>
+  class LiabilityStatement <<entity>>
+  class AssetReportData <<aggregate>>
+  interface FinancialStatementRepository
+}
+
+package "Data Access Layer" #FFF0DA {
+  class JSONReader
+  class DataStandardizer
+  class FinancialDataValidator
+  class AssetStatementMapper
+  class JSONFinancialStatementRepository
+  class DataValidationError
+}
+
+package "Output Layer" #EEE5FA {
+  class Chart <<dataclass>>
+  interface ChartGenerator
+  class AssetCharts
+  class NarrativeGenerator
+  class ReportTemplate
+  class ReportBuilder
+  class ReportFileExporter
+}
+
+CLI ..> FinancialAnalysisApp : invokes
+
+FinancialAnalysisApp *-- ApplicationConfig
+FinancialAnalysisApp *-- DependencyContainer
+FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates
+DependencyContainer ..> GenerateAssetReport : assembles
+
+GenerateAssetReport --> FinancialStatementRepository : loads
+GenerateAssetReport --> AssetAnalysisService : analyzes
+GenerateAssetReport --> ChartGenerator : renders charts
+GenerateAssetReport --> ReportBuilder : builds HTML
+GenerateAssetReport --> ReportFileExporter : exports
+
+JSONFinancialStatementRepository ..|> FinancialStatementRepository
+JSONFinancialStatementRepository *-- JSONReader
+JSONFinancialStatementRepository *-- DataStandardizer
+JSONFinancialStatementRepository *-- FinancialDataValidator
+JSONFinancialStatementRepository *-- AssetStatementMapper
+JSONReader ..> DataValidationError : raises
+FinancialDataValidator ..> DataValidationError : raises
+FinancialDataValidator ..> Money : validates
+AssetStatementMapper ..> AssetReportData : maps
+
+AssetAnalysisService *-- MetricsCalculator
+AssetAnalysisService ..> AssetReportData
+AssetAnalysisService ..> AssetAnalysisResult : creates
+AssetAnalysisResult *-- "0..*" AssetMetric
+AssetMetric --> Money
+
+Company *-- ReportingPeriod
+AssetReportData *-- Company
+AssetReportData *-- AssetStatement
+AssetStatement *-- "0..*" AssetItem : current assets
+AssetStatement *-- "0..*" AssetItem : non-current assets
+AssetItem *-- Money
+LiabilityStatement *-- "0..*" LiabilityItem : current liabilities
+LiabilityStatement *-- "0..*" LiabilityItem : non-current liabilities
+LiabilityItem *-- Money
+FinancialStatementRepository ..> AssetReportData
+
+AssetCharts ..|> ChartGenerator
+AssetCharts ..> AssetAnalysisResult
+AssetCharts ..> Chart : creates four
+ReportBuilder *-- NarrativeGenerator
+ReportBuilder *-- ReportTemplate
+ReportBuilder ..> AssetAnalysisResult
+ReportBuilder ..> Chart
+NarrativeGenerator ..> AssetAnalysisResult
+
+note right of GenerateAssetReport
+  Coordinates the complete pipeline:
+  load -> analyze -> chart -> build -> export
+end note
+
+legend bottom
+  |= Relation |= Meaning |
+  | *-- | Composition / ownership |
+  | --> | Runtime collaboration |
+  | ..> | Dependency / creation |
+  | ..|> | Interface implementation |
+endlegend
+
+@enduml

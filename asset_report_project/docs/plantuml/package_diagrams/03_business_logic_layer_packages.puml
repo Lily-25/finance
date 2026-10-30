@@ -1,0 +1,33 @@
+@startuml BusinessLogicLayerPackages
+
+title Asset Report Generator - Business Logic Layer Packages
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+package "asset_report.business" as Business #E2F3E7 {
+  [__init__.py] as BusinessAPI
+  [analysis.py] as AnalysisModule
+  BusinessAPI ..> AnalysisModule : re-exports
+}
+
+package "asset_report.domain" as Domain #E3F0F8 {
+  [models.py] as ModelsModule
+}
+
+AnalysisModule ..> ModelsModule : AssetItem + AssetReportData + Money
+
+note bottom of Business
+  analysis.py contains MetricsCalculator,
+  AssetMetric, AssetAnalysisResult, and
+  AssetAnalysisService.
+
+  Paired class diagram:
+  03_business_logic_layer_classes.puml
+end note
+
+@enduml

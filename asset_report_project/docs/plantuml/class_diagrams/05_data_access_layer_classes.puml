@@ -1,0 +1,90 @@
+@startuml DataAccessLayerClasses
+
+title Asset Report Generator - Data Access Layer Classes
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+package "JSON Data Access\nasset_report.data_access.json_repository" #FFF0DA {
+  class DataValidationError {
+  }
+
+  class JSONReader {
+    + read(path: Path): dict
+  }
+
+  class DataStandardizer {
+    + standardize(data: dict): dict
+    - {static} _standardize_item(item: object): object
+  }
+
+  class FinancialDataValidator {
+    + REQUIRED_ROOT: tuple(str)
+    + validate(data: dict): None
+    - {static} _validate_items(items: list, section: str): None
+  }
+
+  class AssetStatementMapper {
+    + map(data: dict): AssetReportData
+    - {static} _map_item(item: dict): AssetItem
+  }
+
+  class JSONFinancialStatementRepository {
+    + path: Path
+    + reader: JSONReader
+    + standardizer: DataStandardizer
+    + validator: FinancialDataValidator
+    + mapper: AssetStatementMapper
+    + __init__(path)
+    + load(): AssetReportData
+  }
+}
+
+package "Domain Layer" #E3F0F8 {
+  interface FinancialStatementRepository <<Protocol>> {
+    + load(): AssetReportData
+  }
+  class Money <<value object>>
+  class ReportingPeriod <<value object>>
+  class Company <<entity>>
+  class AssetItem <<entity>>
+  class AssetStatement <<entity>>
+  class AssetReportData <<aggregate>>
+}
+
+class ValueError <<Python standard library>>
+
+DataValidationError --|> ValueError
+JSONFinancialStatementRepository ..|> FinancialStatementRepository
+JSONFinancialStatementRepository *-- JSONReader
+JSONFinancialStatementRepository *-- DataStandardizer
+JSONFinancialStatementRepository *-- FinancialDataValidator
+JSONFinancialStatementRepository *-- AssetStatementMapper
+
+JSONReader ..> DataValidationError : raises
+FinancialDataValidator ..> DataValidationError : raises
+FinancialDataValidator ..> Money : validates amount
+
+AssetStatementMapper ..> Money : constructs
+AssetStatementMapper ..> ReportingPeriod : constructs
+AssetStatementMapper ..> Company : constructs
+AssetStatementMapper ..> AssetItem : constructs
+AssetStatementMapper ..> AssetStatement : constructs
+AssetStatementMapper ..> AssetReportData : returns
+
+note right of JSONFinancialStatementRepository
+  Pipeline:
+  read -> standardize -> validate -> map
+end note
+
+note bottom of FinancialDataValidator
+  Checks required fields, section types,
+  unique names, non-negative finite amounts,
+  and the presence of at least one asset.
+end note
+
+@enduml

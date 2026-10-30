@@ -1,0 +1,37 @@
+@startuml DataAccessLayerPackages
+
+title Asset Report Generator - Data Access Layer Packages
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+package "asset_report.data_access" as DataAccess #FFF0DA {
+  [__init__.py] as DataAccessAPI
+  [json_repository.py] as JSONRepositoryModule
+  DataAccessAPI ..> JSONRepositoryModule : re-exports
+}
+
+package "asset_report.domain" as Domain #E3F0F8 {
+  [models.py] as ModelsModule
+  [repositories.py] as RepositoriesModule
+}
+
+JSONRepositoryModule ..> ModelsModule : constructs domain objects
+JSONRepositoryModule ..> RepositoriesModule : structural implementation
+
+note bottom of DataAccess
+  json_repository.py contains the complete
+  read -> standardize -> validate -> map pipeline.
+
+  JSONFinancialStatementRepository satisfies the
+  repository protocol by structural typing.
+
+  Paired class diagram:
+  05_data_access_layer_classes.puml
+end note
+
+@enduml
