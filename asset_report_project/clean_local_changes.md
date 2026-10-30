@@ -1,0 +1,3 @@
+cd finance
+git fetch origin
+git reset --hard origin/main

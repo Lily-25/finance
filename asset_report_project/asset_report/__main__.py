@@ -11,4 +11,8 @@ if __package__ in (None, ""):
 else:
     from .presentation.cli import main
 
-raise SystemExit(main())
+raise SystemExit(main(main([
+    "../sample_data/main_input.json",
+    "--output", "../build/main_report.html",
+    "--title", "Orion 2025 Asset Report",
+])))
