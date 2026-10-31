@@ -20,24 +20,24 @@ def build_parser() -> argparse.ArgumentParser:
         "input",
         type=Path,
         nargs="+",
-        help="one JSON statement, or two or more period files for a time-frame report",
+        help="one or more JSON period files for a time-frame report",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        default=Path("build/financial-report.html"),
-        help="output HTML path (default: build/financial-report.html)",
+        default=Path("build/time-frame-report.html"),
+        help="output HTML path (default: build/time-frame-report.html)",
     )
     parser.add_argument("--title", help="optional browser-page title")
-    parser.add_argument("--version", action="version", version="financial-report 2.3.0")
+    parser.add_argument("--version", action="version", version="financial-report 3.0.0")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        output = FinancialAnalysisApp().generate_financial_report(
+        output = FinancialAnalysisApp().generate_time_frame_report(
             args.input, args.output, title=args.title
         )
     except (DataValidationError, ValueError, OSError) as exc:

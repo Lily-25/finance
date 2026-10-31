@@ -127,7 +127,7 @@ FinancialStatementData *-- "1" Company
 FinancialStatementData *-- "1" AssetStatement
 FinancialStatementData *-- "1" LiabilityStatement
 FinancialTimeSeriesData *-- "1" Company
-FinancialTimeSeriesData *-- "2..*" FinancialStatementData
+FinancialTimeSeriesData *-- "1..*" FinancialStatementData
 AssetStatement *-- "21" Money : standard line items
 AssetStatement *-- "0..*" AssetItem : additional lines
 AssetItem *-- "1" Money
@@ -149,6 +149,7 @@ note right of LiabilityStatement
 end note
 
 note right of FinancialTimeSeriesData
+  Contains one or more periods.
   Period labels are unique and chronological.
   All statements share company, ticker, and currency.
 end note

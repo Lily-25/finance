@@ -19,7 +19,7 @@ package "Application Layer" #E3EEFF {
   class ApplicationConfig <<dataclass>>
   class DependencyContainer
   class FinancialAnalysisApp
-  class GenerateFinancialReport
+  class GenerateTimeFrameReport
 }
 
 package "Business Logic Layer" #E2F3E7 {
@@ -69,13 +69,13 @@ FinancialAnalysisApp *-- DependencyContainer
 FinancialAnalysisApp ..> JSONFinancialStatementRepository : one or more JSON paths
 FinancialAnalysisApp ..> FinancialAnalysisService : explicit analysis API
 FinancialAnalysisApp ..> TimeFrameAnalysisResult : returns
-DependencyContainer ..> GenerateFinancialReport : assembles
+DependencyContainer ..> GenerateTimeFrameReport : assembles
 
-GenerateFinancialReport --> FinancialStatementRepository : loads
-GenerateFinancialReport --> FinancialAnalysisService : analyzes
-GenerateFinancialReport --> ChartGenerator : renders charts
-GenerateFinancialReport --> ReportBuilder : builds HTML
-GenerateFinancialReport --> ReportFileExporter : exports
+GenerateTimeFrameReport --> FinancialStatementRepository : loads
+GenerateTimeFrameReport --> FinancialAnalysisService : analyzes
+GenerateTimeFrameReport --> ChartGenerator : renders charts
+GenerateTimeFrameReport --> ReportBuilder : builds HTML
+GenerateTimeFrameReport --> ReportFileExporter : exports
 
 JSONFinancialStatementRepository ..|> FinancialStatementRepository
 JSONFinancialStatementRepository *-- JSONReader
@@ -94,7 +94,7 @@ FinancialAnalysisService ..> FinancialTimeSeriesData
 FinancialAnalysisService ..> FinancialAnalysisResult : creates
 FinancialAnalysisService ..> TimeFrameAnalysisResult : creates
 FinancialAnalysisResult *-- "0..*" FinancialMetric
-TimeFrameAnalysisResult *-- "2..*" FinancialAnalysisResult
+TimeFrameAnalysisResult *-- "1..*" FinancialAnalysisResult
 FinancialMetric --> Money
 
 Company *-- ReportingPeriod
@@ -102,7 +102,7 @@ FinancialStatementData *-- Company
 FinancialStatementData *-- AssetStatement
 FinancialStatementData *-- LiabilityStatement
 FinancialTimeSeriesData *-- Company
-FinancialTimeSeriesData *-- "2..*" FinancialStatementData
+FinancialTimeSeriesData *-- "1..*" FinancialStatementData
 AssetStatement *-- "0..*" AssetItem : current assets
 AssetStatement *-- "0..*" AssetItem : non-current assets
 AssetItem *-- Money
@@ -124,8 +124,8 @@ ReportBuilder ..> Chart
 NarrativeGenerator ..> FinancialAnalysisResult
 NarrativeGenerator ..> TimeFrameAnalysisResult
 
-note right of GenerateFinancialReport
-  Coordinates the complete pipeline:
+note right of GenerateTimeFrameReport
+  Coordinates the unified pipeline:
   load -> analyze -> chart -> build -> export
 end note
 

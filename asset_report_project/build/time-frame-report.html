@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Asset, liability, liquidity, and leverage report">
+  <title>Orion 2023–2026Q3 Trend Report</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #172033;
+  --muted: #64748b;
+  --line: #e5eaf2;
+  --surface: #ffffff;
+  --canvas: #f4f7fb;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--canvas);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.report { width: min(1180px, calc(100% - 40px)); margin: 34px auto 56px; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 48px 52px;
+  border-radius: 24px;
+  color: white;
+  background: linear-gradient(125deg, #14213d 0%, #243b6b 58%, #4338ca 100%);
+  box-shadow: 0 24px 70px rgba(20, 33, 61, .18);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -110px;
+  top: -150px;
+  border: 56px solid rgba(255,255,255,.09);
+  border-radius: 50%;
+}
+.eyebrow { margin: 0 0 10px; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 750; opacity: .78; }
+h1 { max-width: 760px; margin: 0; font-size: clamp(34px, 5vw, 58px); line-height: 1.04; letter-spacing: -.045em; }
+.hero-meta { display: flex; gap: 18px 32px; flex-wrap: wrap; margin-top: 24px; color: rgba(255,255,255,.82); }
+.hero-meta strong { color: white; }
+.section { margin-top: 26px; }
+.section-heading { margin: 0 0 14px; font-size: 21px; letter-spacing: -.02em; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: -18px; position: relative; padding: 0 22px; }
+.kpi, .panel, .chart-card {
+  background: var(--surface);
+  border: 1px solid rgba(229,234,242,.9);
+  box-shadow: 0 12px 36px rgba(23,32,51,.065);
+}
+.kpi { min-width: 0; padding: 22px; border-radius: 16px; }
+.kpi-label { color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.kpi-value { display: block; margin-top: 8px; font-size: clamp(19px, 2.2vw, 28px); font-weight: 780; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.kpi-note { display: block; color: var(--muted); margin-top: 3px; font-size: 13px; }
+.panel { border-radius: 18px; padding: 27px 30px; }
+.insights { margin: 0; padding: 0; list-style: none; display: grid; gap: 17px; }
+.insights li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+.insights li::before { content: ""; width: 10px; height: 10px; margin-top: 7px; border-radius: 3px; background: linear-gradient(135deg, var(--blue), var(--purple)); }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+.chart-card { overflow: hidden; border-radius: 18px; }
+.chart-copy { padding: 24px 26px 6px; }
+.chart-copy h3 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+.chart-copy p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.chart-frame { padding: 6px 16px 18px; overflow-x: auto; }
+.chart-svg { display: block; width: 100%; min-width: 540px; height: auto; }
+.svg-kicker, .svg-note, .svg-label, .svg-value, .svg-value-sm, .svg-number { font-family: inherit; fill: var(--ink); }
+.svg-kicker { font-size: 11px; fill: var(--muted); font-weight: 700; letter-spacing: .08em; }
+.svg-value { font-size: 17px; font-weight: 750; }
+.svg-value-sm { font-size: 19px; font-weight: 750; }
+.svg-label { font-size: 13px; font-weight: 650; }
+.svg-number { font-size: 13px; font-weight: 760; }
+.svg-note { font-size: 11px; fill: var(--muted); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { padding: 12px 15px; color: var(--muted); font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+td { padding: 14px 15px; border-bottom: 1px solid var(--line); }
+th.number, td.number { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.badge { display: inline-flex; padding: 4px 9px; border-radius: 999px; background: #eef4ff; color: #1d4ed8; font-size: 12px; font-weight: 700; }
+.badge.non-current { background: #f3efff; color: #6d28d9; }
+.total-row td { background: #f8fafc; font-weight: 780; }
+.footer { color: var(--muted); text-align: center; font-size: 12px; margin-top: 26px; }
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .report { width: min(100% - 24px, 1180px); margin-top: 12px; }
+  .hero { padding: 36px 28px 48px; border-radius: 18px; }
+  .kpis { grid-template-columns: 1fr; margin-top: -26px; }
+  .chart-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: white; }
+  .report { width: 100%; margin: 0; }
+  .hero, .kpi, .panel, .chart-card { box-shadow: none; break-inside: avoid; }
+  .chart-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body><main class="report">
+  <header class="hero">
+    <p class="eyebrow">Financial analysis · Time-frame comparison</p>
+    <h1>Orion Industrial Group Ltd.</h1>
+    <div class="hero-meta">
+      <span><strong>Time frame</strong> · 2023 to 2026Q3</span>
+      <span><strong>Periods</strong> · 4</span>
+      <span><strong>Currency</strong> · USD</span>
+      <span><strong>Ticker</strong> · OIG</span>
+    </div>
+  </header>
+  <section class="kpis" aria-label="Latest period and trend totals">
+  <div class="kpi"><span class="kpi-label">Latest assets</span><strong class="kpi-value">USD 22,000,000.00</strong><span class="kpi-note">+83.3% over the time frame</span></div>
+  <div class="kpi"><span class="kpi-label">Latest liabilities</span><strong class="kpi-value">USD 9,900,000.00</strong><span class="kpi-note">45.0% of assets</span></div>
+  <div class="kpi"><span class="kpi-label">Latest net assets</span><strong class="kpi-value">USD 12,100,000.00</strong><span class="kpi-note">Assets less liabilities</span></div>
+  <div class="kpi"><span class="kpi-label">Latest current ratio</span><strong class="kpi-value">1.95:1</strong><span class="kpi-note">At 2026Q3</span></div>
+</section>
+  <section class="section" aria-labelledby="interpretation-heading">
+    <h2 id="interpretation-heading" class="section-heading">Trend interpretation</h2>
+    <div class="panel"><ul class="insights"><li>Total assets increased from USD 12,000,000.00 in 2023 to USD 22,000,000.00 in 2026Q3, a change of 83.3%.</li><li>Total liabilities increased by 41.4% over the same period, while liabilities as a share of assets moved from 58.3% to 45.0% (-13.3 percentage points).</li><li>Net assets increased from USD 5,000,000.00 to USD 12,100,000.00, a change of 142.0%.</li><li>The current ratio is 1.95:1 in 2026Q3; the lowest reported level was 1.60:1 in 2023.</li></ul></div>
+  </section>
+  <section class="section" aria-labelledby="visual-heading">
+    <h2 id="visual-heading" class="section-heading">Time-series analysis</h2>
+    <div class="chart-grid"><article class="chart-card">
+  <div class="chart-copy"><h3>Assets and liabilities over time</h3><p>Period-end totals for the selected time frame</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 340" role="img" aria-label="2023: assets 12.0M, liabilities 7.0M; 2024: assets 14.0M, liabilities 7.3M; 2025: assets 20.0M, liabilities 9.5M; 2026Q3: assets 22.0M, liabilities 9.9M">
+  <title>Assets and liabilities over time</title>
+  <line x1="80" y1="270" x2="760" y2="270" stroke="#e9eef7" stroke-width="2"/>
+  <g>
+  <rect x="129.25" y="148.91" width="48.00" height="121.09" rx="5" fill="#2563eb"/>
+  <rect x="185.25" y="199.36" width="48.00" height="70.64" rx="5" fill="#7c3aed"/>
+  <text x="153.25" y="140.91" text-anchor="middle" class="svg-note">12.0M</text>
+  <text x="209.25" y="191.36" text-anchor="middle" class="svg-note">7.0M</text>
+  <text x="181.25" y="296" text-anchor="middle" class="svg-label">2023</text>
+</g><g>
+  <rect x="291.75" y="128.73" width="48.00" height="141.27" rx="5" fill="#2563eb"/>
+  <rect x="347.75" y="196.34" width="48.00" height="73.66" rx="5" fill="#7c3aed"/>
+  <text x="315.75" y="120.73" text-anchor="middle" class="svg-note">14.0M</text>
+  <text x="371.75" y="188.34" text-anchor="middle" class="svg-note">7.3M</text>
+  <text x="343.75" y="296" text-anchor="middle" class="svg-label">2024</text>
+</g><g>
+  <rect x="454.25" y="68.18" width="48.00" height="201.82" rx="5" fill="#2563eb"/>
+  <rect x="510.25" y="174.14" width="48.00" height="95.86" rx="5" fill="#7c3aed"/>
+  <text x="478.25" y="60.18" text-anchor="middle" class="svg-note">20.0M</text>
+  <text x="534.25" y="166.14" text-anchor="middle" class="svg-note">9.5M</text>
+  <text x="506.25" y="296" text-anchor="middle" class="svg-label">2025</text>
+</g><g>
+  <rect x="616.75" y="48.00" width="48.00" height="222.00" rx="5" fill="#2563eb"/>
+  <rect x="672.75" y="170.10" width="48.00" height="99.90" rx="5" fill="#7c3aed"/>
+  <text x="640.75" y="40.00" text-anchor="middle" class="svg-note">22.0M</text>
+  <text x="696.75" y="162.10" text-anchor="middle" class="svg-note">9.9M</text>
+  <text x="668.75" y="296" text-anchor="middle" class="svg-label">2026Q3</text>
+</g>
+  <rect x="280" y="314" width="16" height="16" rx="4" fill="#2563eb"/>
+  <text x="310" y="327" class="svg-label">Assets</text>
+  <text x="710" y="327" text-anchor="end" class="svg-value-sm"></text>
+  <rect x="470" y="314" width="16" height="16" rx="4" fill="#7c3aed"/>
+  <text x="500" y="327" class="svg-label">Liabilities</text>
+  <text x="710" y="327" text-anchor="end" class="svg-value-sm"></text>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Net assets trend</h3><p>Total assets less total liabilities</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 310" role="img" aria-label="2023 5.0M; 2024 6.7M; 2025 10.5M; 2026Q3 12.1M">
+  <title>Net assets trend</title>
+  <line x1="90" y1="250" x2="730" y2="250" stroke="#e9eef7" stroke-width="2"/>
+  <polyline points="90.00,169.01 303.33,141.47 516.67,79.92 730.00,54.00" fill="none" stroke="#0f766e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90.00" cy="169.01" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="3"/>
+  <text x="90.00" y="155.01" text-anchor="middle" class="svg-number">5.0M</text>
+  <text x="90.00" y="278" text-anchor="middle" class="svg-label">2023</text><circle cx="303.33" cy="141.47" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="3"/>
+  <text x="303.33" y="127.47" text-anchor="middle" class="svg-number">6.7M</text>
+  <text x="303.33" y="278" text-anchor="middle" class="svg-label">2024</text><circle cx="516.67" cy="79.92" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="3"/>
+  <text x="516.67" y="65.92" text-anchor="middle" class="svg-number">10.5M</text>
+  <text x="516.67" y="278" text-anchor="middle" class="svg-label">2025</text><circle cx="730.00" cy="54.00" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="3"/>
+  <text x="730.00" y="40.00" text-anchor="middle" class="svg-number">12.1M</text>
+  <text x="730.00" y="278" text-anchor="middle" class="svg-label">2026Q3</text>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Current ratio trend</h3><p>Current assets divided by current liabilities</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 310" role="img" aria-label="2023 1.60:1; 2024 1.85:1; 2025 1.86:1; 2026Q3 1.95:1">
+  <title>Current ratio trend</title>
+  <line x1="90" y1="250" x2="730" y2="250" stroke="#e9eef7" stroke-width="2"/>
+  <polyline points="90.00,88.84 303.33,63.48 516.67,62.94 730.00,54.00" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90.00" cy="88.84" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>
+  <text x="90.00" y="74.84" text-anchor="middle" class="svg-number">1.60:1</text>
+  <text x="90.00" y="278" text-anchor="middle" class="svg-label">2023</text><circle cx="303.33" cy="63.48" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>
+  <text x="303.33" y="49.48" text-anchor="middle" class="svg-number">1.85:1</text>
+  <text x="303.33" y="278" text-anchor="middle" class="svg-label">2024</text><circle cx="516.67" cy="62.94" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>
+  <text x="516.67" y="48.94" text-anchor="middle" class="svg-number">1.86:1</text>
+  <text x="516.67" y="278" text-anchor="middle" class="svg-label">2025</text><circle cx="730.00" cy="54.00" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>
+  <text x="730.00" y="40.00" text-anchor="middle" class="svg-number">1.95:1</text>
+  <text x="730.00" y="278" text-anchor="middle" class="svg-label">2026Q3</text>
+</svg></div>
+</article><article class="chart-card">
+  <div class="chart-copy"><h3>Liabilities to assets</h3><p>Leverage as a percentage of total assets</p></div>
+  <div class="chart-frame"><svg class="chart-svg" viewBox="0 0 800 310" role="img" aria-label="2023 58.3%; 2024 52.1%; 2025 47.5%; 2026Q3 45.0%">
+  <title>Liabilities to assets</title>
+  <line x1="90" y1="250" x2="730" y2="250" stroke="#e9eef7" stroke-width="2"/>
+  <polyline points="90.00,54.00 303.33,74.80 516.67,90.40 730.00,98.80" fill="none" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90.00" cy="54.00" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+  <text x="90.00" y="40.00" text-anchor="middle" class="svg-number">58.3%</text>
+  <text x="90.00" y="278" text-anchor="middle" class="svg-label">2023</text><circle cx="303.33" cy="74.80" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+  <text x="303.33" y="60.80" text-anchor="middle" class="svg-number">52.1%</text>
+  <text x="303.33" y="278" text-anchor="middle" class="svg-label">2024</text><circle cx="516.67" cy="90.40" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+  <text x="516.67" y="76.40" text-anchor="middle" class="svg-number">47.5%</text>
+  <text x="516.67" y="278" text-anchor="middle" class="svg-label">2025</text><circle cx="730.00" cy="98.80" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+  <text x="730.00" y="84.80" text-anchor="middle" class="svg-number">45.0%</text>
+  <text x="730.00" y="278" text-anchor="middle" class="svg-label">2026Q3</text>
+</svg></div>
+</article></div>
+  </section>
+  <section class="section" aria-labelledby="period-heading">
+    <h2 id="period-heading" class="section-heading">Period comparison</h2>
+    <div class="panel table-wrap"><table>
+  <thead><tr><th>Period</th><th class="number">Assets</th><th class="number">Liabilities</th><th class="number">Net assets</th><th class="number">Liabilities / assets</th><th class="number">Current ratio</th></tr></thead>
+  <tbody><tr>
+  <td>2023</td>
+  <td class="number">USD 12,000,000.00</td>
+  <td class="number">USD 7,000,000.00</td>
+  <td class="number">USD 5,000,000.00</td>
+  <td class="number">58.3%</td>
+  <td class="number">1.60:1</td>
+</tr><tr>
+  <td>2024</td>
+  <td class="number">USD 14,000,000.00</td>
+  <td class="number">USD 7,300,000.00</td>
+  <td class="number">USD 6,700,000.00</td>
+  <td class="number">52.1%</td>
+  <td class="number">1.85:1</td>
+</tr><tr>
+  <td>2025</td>
+  <td class="number">USD 20,000,000.00</td>
+  <td class="number">USD 9,500,000.00</td>
+  <td class="number">USD 10,500,000.00</td>
+  <td class="number">47.5%</td>
+  <td class="number">1.86:1</td>
+</tr><tr>
+  <td>2026Q3</td>
+  <td class="number">USD 22,000,000.00</td>
+  <td class="number">USD 9,900,000.00</td>
+  <td class="number">USD 12,100,000.00</td>
+  <td class="number">45.0%</td>
+  <td class="number">1.95:1</td>
+</tr></tbody>
+</table></div>
+  </section>
+  <section class="section" aria-labelledby="latest-asset-heading">
+    <h2 id="latest-asset-heading" class="section-heading">Latest asset detail · 2026Q3</h2>
+    <div class="panel table-wrap"><table>
+  <thead><tr><th>Asset</th><th>Classification</th><th class="number">Amount</th><th class="number">% of assets</th></tr></thead>
+  <tbody><tr>
+  <td>Fixed assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 7,500,000.00</td>
+  <td class="number">34.1%</td>
+</tr><tr>
+  <td>Accounts receivable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 2,400,000.00</td>
+  <td class="number">10.9%</td>
+</tr><tr>
+  <td>Cash and cash equivalents</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 2,000,000.00</td>
+  <td class="number">9.1%</td>
+</tr><tr>
+  <td>Long-term investments</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 1,700,000.00</td>
+  <td class="number">7.7%</td>
+</tr><tr>
+  <td>Inventory</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 1,400,000.00</td>
+  <td class="number">6.4%</td>
+</tr><tr>
+  <td>Construction in progress</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 1,000,000.00</td>
+  <td class="number">4.5%</td>
+</tr><tr>
+  <td>Intangible assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 1,000,000.00</td>
+  <td class="number">4.5%</td>
+</tr><tr>
+  <td>Right-of-use assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 900,000.00</td>
+  <td class="number">4.1%</td>
+</tr><tr>
+  <td>Debt investments</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 800,000.00</td>
+  <td class="number">3.6%</td>
+</tr><tr>
+  <td>Equity investments</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 700,000.00</td>
+  <td class="number">3.2%</td>
+</tr><tr>
+  <td>Goodwill</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 400,000.00</td>
+  <td class="number">1.8%</td>
+</tr><tr>
+  <td>Trading financial assets</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 300,000.00</td>
+  <td class="number">1.4%</td>
+</tr><tr>
+  <td>Non-current assets due within one year</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 300,000.00</td>
+  <td class="number">1.4%</td>
+</tr><tr>
+  <td>Development expenditure</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 300,000.00</td>
+  <td class="number">1.4%</td>
+</tr><tr>
+  <td>Deferred tax assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 300,000.00</td>
+  <td class="number">1.4%</td>
+</tr><tr>
+  <td>Notes receivable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">0.9%</td>
+</tr><tr>
+  <td>Prepayments</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">0.9%</td>
+</tr><tr>
+  <td>Other current assets</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">0.9%</td>
+</tr><tr>
+  <td>Other non-current assets</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">0.9%</td>
+</tr><tr>
+  <td>Receivables financing</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">0.5%</td>
+</tr><tr>
+  <td>Other receivables</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">0.5%</td>
+</tr><tr class="total-row"><td>Total assets</td><td>—</td><td class="number">USD 22,000,000.00</td><td class="number">100.0%</td></tr></tbody>
+</table></div>
+  </section>
+  <section class="section" aria-labelledby="latest-liability-heading">
+    <h2 id="latest-liability-heading" class="section-heading">Latest liability detail · 2026Q3</h2>
+    <div class="panel table-wrap"><table>
+  <thead><tr><th>Liability</th><th>Classification</th><th class="number">Amount</th><th class="number">% of liabilities</th><th class="number">% of assets</th></tr></thead>
+  <tbody><tr>
+  <td>Long-term debt</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 4,600,000.00</td>
+  <td class="number">46.5%</td><td class="number">20.9%</td>
+</tr><tr>
+  <td>Accounts payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 1,600,000.00</td>
+  <td class="number">16.2%</td><td class="number">7.3%</td>
+</tr><tr>
+  <td>Lease liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 900,000.00</td>
+  <td class="number">9.1%</td><td class="number">4.1%</td>
+</tr><tr>
+  <td>Short-term debt</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 800,000.00</td>
+  <td class="number">8.1%</td><td class="number">3.6%</td>
+</tr><tr>
+  <td>Accrued expenses</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 350,000.00</td>
+  <td class="number">3.5%</td><td class="number">1.6%</td>
+</tr><tr>
+  <td>Non-current liabilities due within one year</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 250,000.00</td>
+  <td class="number">2.5%</td><td class="number">1.1%</td>
+</tr><tr>
+  <td>Notes payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">2.0%</td><td class="number">0.9%</td>
+</tr><tr>
+  <td>Deferred tax liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 200,000.00</td>
+  <td class="number">2.0%</td><td class="number">0.9%</td>
+</tr><tr>
+  <td>Taxes payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 150,000.00</td>
+  <td class="number">1.5%</td><td class="number">0.7%</td>
+</tr><tr>
+  <td>Deferred revenue</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 150,000.00</td>
+  <td class="number">1.5%</td><td class="number">0.7%</td>
+</tr><tr>
+  <td>Deferred income</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 150,000.00</td>
+  <td class="number">1.5%</td><td class="number">0.7%</td>
+</tr><tr>
+  <td>Other non-current liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 150,000.00</td>
+  <td class="number">1.5%</td><td class="number">0.7%</td>
+</tr><tr>
+  <td>Payroll payable</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">1.0%</td><td class="number">0.5%</td>
+</tr><tr>
+  <td>Other current liabilities</td>
+  <td><span class="badge ">Current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">1.0%</td><td class="number">0.5%</td>
+</tr><tr>
+  <td>Pension liabilities</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">1.0%</td><td class="number">0.5%</td>
+</tr><tr>
+  <td>Provisions</td>
+  <td><span class="badge non-current">Non-current</span></td>
+  <td class="number">USD 100,000.00</td>
+  <td class="number">1.0%</td><td class="number">0.5%</td>
+</tr><tr class="total-row"><td>Total liabilities</td><td>—</td><td class="number">USD 9,900,000.00</td><td class="number">100.0%</td><td class="number">45.0%</td></tr></tbody>
+</table></div>
+  </section>
+  <footer class="footer">Generated 2026-10-31 04:07 UTC · Amounts shown in USD</footer>
+</main></body>
+</html>

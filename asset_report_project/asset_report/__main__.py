@@ -16,12 +16,16 @@ def default_arguments() -> list[str]:
     """Return a runnable example when the module is started without arguments."""
 
     project_root = Path(__file__).resolve().parents[1]
+    sample_root = project_root / "sample_data"
     return [
-        str(project_root / "sample_data" / "main_input.json"),
+        str(sample_root / "orion_industrial_group_ltd_2023.json"),
+        str(sample_root / "orion_industrial_group_ltd_2024.json"),
+        str(sample_root / "orion_industrial_group_ltd_2025.json"),
+        str(sample_root / "orion_industrial_group_ltd_2026Q3.json"),
         "--output",
-        str(project_root / "build" / "main_report.html"),
+        str(project_root / "build" / "time-frame-report.html"),
         "--title",
-        "Orion 2025 Financial Position Report",
+        "Orion 2023–2026Q3 Trend Report",
     ]
 
 

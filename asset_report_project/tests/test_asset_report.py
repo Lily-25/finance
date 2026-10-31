@@ -10,18 +10,17 @@ import unittest
 from decimal import Decimal
 from pathlib import Path
 
-
-from asset_report_project.asset_report.application.app import FinancialAnalysisApp
-from asset_report_project.asset_report.business.analysis import (
+from asset_report.application.app import FinancialAnalysisApp
+from asset_report.business.analysis import (
     AssetAnalysisService,
     MetricsCalculator,
     TimeFrameAnalysisResult,
 )
-from asset_report_project.asset_report.data_access.json_repository import (
+from asset_report.data_access.json_repository import (
     DataValidationError,
     JSONFinancialStatementRepository,
 )
-from asset_report_project.asset_report.domain.models import (
+from asset_report.domain.models import (
     AssetItem,
     AssetReportData,
     AssetStatement,
@@ -32,9 +31,9 @@ from asset_report_project.asset_report.domain.models import (
     Money,
     ReportingPeriod,
 )
-from asset_report_project.asset_report.output.charts import AssetCharts
-from asset_report_project.asset_report.output.reporting import NarrativeGenerator, ReportBuilder, ReportFileExporter
-from asset_report_project.asset_report.presentation.cli import main
+from asset_report.output.charts import AssetCharts
+from asset_report.output.reporting import NarrativeGenerator, ReportBuilder, ReportFileExporter
+from asset_report.presentation.cli import main
 
 
 def valid_payload() -> dict[str, object]:
@@ -489,16 +488,30 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         self.assertEqual(result.data.time_frame, "2023 to 2026Q3")
         self.assertEqual(result.latest.total_assets.amount, Decimal("22000000"))
 
-    def test_time_frame_facade_requires_two_period_files(self) -> None:
-        with self.assertRaisesRegex(ValueError, "at least two"):
-            FinancialAnalysisApp().analyze_time_frame(self.input_paths[:1])
+    def test_time_frame_facade_accepts_one_period_file(self) -> None:
+        result = FinancialAnalysisApp().analyze_time_frame(self.input_paths[0])
+        self.assertIsInstance(result, TimeFrameAnalysisResult)
+        self.assertEqual(result.data.time_frame, "2023")
+        self.assertEqual(len(result.period_results), 1)
+        self.assertEqual(result.asset_change, 0)
+        self.assertEqual(result.liability_change, 0)
+
+    def test_facade_exposes_only_time_frame_operations(self) -> None:
+        app = FinancialAnalysisApp()
+        self.assertTrue(callable(app.analyze_time_frame))
+        self.assertTrue(callable(app.generate_time_frame_report))
+        self.assertFalse(hasattr(app, "analyze_financial_data"))
+        self.assertFalse(hasattr(app, "generate_financial_report"))
+        self.assertFalse(hasattr(app, "generate_asset_report"))
 
 
 class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
-    def test_comprehensive_main_input_covers_every_standard_field(self) -> None:
+    def test_comprehensive_period_input_covers_every_standard_field(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         data = JSONFinancialStatementRepository(
-            project_root / "sample_data" / "main_input.json"
+            project_root
+            / "sample_data"
+            / "orion_industrial_group_ltd_2025.json"
         ).load()
         for field_name in AssetStatement.CURRENT_FIELDS + AssetStatement.NON_CURRENT_FIELDS:
             self.assertGreater(getattr(data.statement, field_name).amount, 0)
@@ -517,11 +530,15 @@ class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
     def test_application_generates_complete_report(self) -> None:
         input_path = self.write_json(valid_payload())
         output_path = Path(self.temp_dir.name) / "report.html"
-        generated = FinancialAnalysisApp().generate_asset_report(input_path, output_path)
+        generated = FinancialAnalysisApp().generate_time_frame_report(
+            input_path, output_path
+        )
         self.assertEqual(generated, output_path.resolve())
         html = output_path.read_text(encoding="utf-8")
-        self.assertIn("Asset detail", html)
-        self.assertIn("Liability detail", html)
+        self.assertIn("Latest asset detail", html)
+        self.assertIn("Latest liability detail", html)
+        self.assertIn("Time-series analysis", html)
+        self.assertIn("<strong>Periods</strong> · 1", html)
 
     def test_cli_returns_success_and_prints_destination(self) -> None:
         input_path = self.write_json(valid_payload())

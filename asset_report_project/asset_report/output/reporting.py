@@ -63,6 +63,9 @@ class NarrativeGenerator:
     def _generate_time_frame(
         self, result: TimeFrameAnalysisResult
     ) -> tuple[str, ...]:
+        if len(result.period_results) == 1:
+            return self.generate(result.latest)
+
         currency = result.data.currency
         start = result.data.start_period.label
         end = result.data.end_period.label

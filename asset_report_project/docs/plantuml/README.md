@@ -1,6 +1,6 @@
 # PlantUML architecture diagrams
 
-These diagrams describe the implemented Financial Position Report Generator, including single-period and time-frame asset/liability analysis, at two matching levels. Package diagrams show the real Python packages, modules, and imports. Class diagrams expand those modules into their current constructors, public methods, important private helpers, protocols, dataclasses, compositions, and collaborations.
+These diagrams describe the implemented Financial Position Report Generator and its unified one-or-more-period time-frame analysis, at two matching levels. Package diagrams show the real Python packages, modules, and imports. Class diagrams expand those modules into their current constructors, public methods, important private helpers, protocols, dataclasses, compositions, and collaborations.
 
 ## Diagram set
 

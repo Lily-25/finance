@@ -143,8 +143,8 @@ class FinancialDataValidator:
         periods = data["periods"]
         if not isinstance(periods, list):
             raise DataValidationError("'periods' must be an array")
-        if len(periods) < 2:
-            raise DataValidationError("A time frame requires at least two financial periods")
+        if not periods:
+            raise DataValidationError("A time frame requires at least one financial period")
 
         labels: list[str] = []
         for index, period in enumerate(periods):

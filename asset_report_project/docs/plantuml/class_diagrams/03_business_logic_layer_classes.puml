@@ -86,7 +86,7 @@ FinancialAnalysisService ..> FinancialMetric : creates
 
 FinancialAnalysisResult *-- "0..*" FinancialMetric
 FinancialAnalysisResult --> FinancialStatementData
-TimeFrameAnalysisResult *-- "2..*" FinancialAnalysisResult
+TimeFrameAnalysisResult *-- "1..*" FinancialAnalysisResult
 TimeFrameAnalysisResult --> FinancialTimeSeriesData
 FinancialAnalysisResult --> Money : totals
 FinancialMetric --> Money : amount
@@ -96,7 +96,8 @@ note bottom of FinancialAnalysisService
   Uses Decimal-backed Money values.
   Rejects an all-zero asset statement.
   Calculates snapshot composition and ratios,
-  or first-to-latest time-frame changes.
+  A one-period series produces snapshot metrics;
+  longer series add first-to-latest changes.
 end note
 
 @enduml

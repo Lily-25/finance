@@ -550,8 +550,8 @@ class FinancialTimeSeriesData:
 
     def __post_init__(self) -> None:
         statements = tuple(self.statements)
-        if len(statements) < 2:
-            raise ValueError("A time frame requires at least two financial periods")
+        if not statements:
+            raise ValueError("A time frame requires at least one financial period")
 
         labels = [statement.reporting_period.label for statement in statements]
         normalized_labels = [label.casefold() for label in labels]
@@ -594,6 +594,8 @@ class FinancialTimeSeriesData:
 
     @property
     def time_frame(self) -> str:
+        if self.start_period == self.end_period:
+            return self.start_period.label
         return f"{self.start_period.label} to {self.end_period.label}"
 
     @property
