@@ -306,11 +306,11 @@ class FinancialCharts(ChartGenerator):
 
         row_height = 58
         height = max(230, 78 + len(metrics) * row_height)
-        max_amount = max(metric.amount.amount for metric in metrics)
+        max_amount = max(abs(metric.amount.amount) for metric in metrics)
         rows: list[str] = []
         for index, metric in enumerate(metrics):
             y = 54 + index * row_height
-            ratio = float(metric.amount.amount / max_amount) if max_amount else 0
+            ratio = float(abs(metric.amount.amount) / max_amount) if max_amount else 0
             width = max(0.0, ratio * 420)
             percentage = (
                 metric.percentage_of_statement

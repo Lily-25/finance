@@ -106,7 +106,7 @@ end note
 note bottom of FinancialDataValidator
   Checks required fields, section types,
   unique names, required source metadata,
-  non-negative asset/liability amounts, signed equity,
+  finite signed financial amounts,
   complete asset/liability/equity sections, unique periods,
   matching time-frame boundaries, and consistent
   identity across separate period files.

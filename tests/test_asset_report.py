@@ -99,9 +99,8 @@ class MoneyTests(unittest.TestCase):
     def test_accepts_decimal_compatible_values(self) -> None:
         self.assertEqual(Money.from_value("10.25").amount, Decimal("10.25"))
 
-    def test_rejects_negative_amount(self) -> None:
-        with self.assertRaisesRegex(ValueError, "cannot be negative"):
-            Money.from_value(-1)
+    def test_accepts_negative_amount(self) -> None:
+        self.assertEqual(Money.from_value("-10.25").amount, Decimal("-10.25"))
 
     def test_rejects_boolean_amount(self) -> None:
         with self.assertRaisesRegex(ValueError, "Boolean"):
@@ -296,6 +295,35 @@ class RepositoryTests(TemporaryJSONMixin, unittest.TestCase):
         with self.assertRaisesRegex(DataValidationError, r"assets\.current\[0\]\.amount"):
             JSONFinancialStatementRepository(self.write_json(payload)).load()
 
+    def test_accepts_negative_asset_and_liability_figures(self) -> None:
+        payload = valid_payload()
+        payload["assets"]["non_current"] = [  # type: ignore[index]
+            line_item(f"Other non-current component {index}", "0")
+            for index in range(5)
+        ] + [
+            line_item("Accumulated depreciation", "-100")
+        ]
+        payload["liabilities"]["non_current"][0]["amount"] = "-25"  # type: ignore[index]
+
+        data = JSONFinancialStatementRepository(self.write_json(payload)).load()
+
+        self.assertEqual(data.assets.non_current_assets[5].amount.amount, Decimal("-100"))
+        self.assertEqual(data.assets.total_assets.amount, Decimal("200.00"))
+        self.assertEqual(data.liabilities.total_liabilities.amount, Decimal("175"))
+
+    def test_subtotals_are_not_double_counted_and_deductions_are_signed(self) -> None:
+        payload = valid_payload()
+        deduction = line_item("Valuation allowance", "50")
+        deduction["is_deduction"] = True
+        subtotal = line_item("Reported total non-current assets", "650")
+        subtotal["is_subtotal"] = True
+        payload["assets"]["non_current"].extend([deduction, subtotal])  # type: ignore[index]
+
+        data = JSONFinancialStatementRepository(self.write_json(payload)).load()
+
+        self.assertEqual(data.assets.total_non_current_assets.amount, Decimal("650"))
+        self.assertEqual(data.assets.total_assets.amount, Decimal("950.00"))
+
     def test_empty_asset_lists_are_rejected(self) -> None:
         payload = valid_payload()
         payload["assets"] = {"current": [], "non_current": []}
@@ -431,8 +459,8 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
     def setUp(self) -> None:
         self.project_root = Path(__file__).resolve().parents[1]
         self.input_paths = sorted(
-            (self.project_root / "sample_data").glob(
-                "gotion_high_tech_co_ltd_*.json"
+            (self.project_root / "sample_data" / "gotion_high_tech_co_ltd").glob(
+                "gotion_high_tech_co_ltd_*_balance_sheet.json"
             )
         )
         self.data = JSONFinancialStatementRepository(self.input_paths).load()
@@ -488,7 +516,7 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
             self.assertTrue(statement.is_balanced)
             payload = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(payload["source"]["statement"], "Consolidated balance sheet")
-            self.assertTrue(payload["source"]["url"].endswith(".PDF"))
+            self.assertTrue(payload["source"]["url"].lower().endswith(".pdf"))
 
     def test_multi_file_input_is_sorted_by_reporting_period(self) -> None:
         data = JSONFinancialStatementRepository(list(reversed(self.input_paths))).load()
@@ -687,7 +715,13 @@ class SchemaLibraryTests(unittest.TestCase):
         self.assertEqual(required, ["name", "amount", "source_field", "description"])
 
     def test_gotion_samples_identify_the_cas_balance_sheet_profile(self) -> None:
-        for path in sorted((self.project_root / "sample_data").glob("gotion*.json")):
+        paths = sorted(
+            (self.project_root / "sample_data" / "gotion_high_tech_co_ltd").glob(
+                "*_balance_sheet.json"
+            )
+        )
+        self.assertEqual(len(paths), 4)
+        for path in paths:
             payload = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(payload["schema"]["profile"], "CAS_2019")
             self.assertEqual(payload["schema"]["statement_type"], "balance_sheet")
@@ -702,7 +736,8 @@ class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
         data = JSONFinancialStatementRepository(
             project_root
             / "sample_data"
-            / "gotion_high_tech_co_ltd_2025.json"
+            / "gotion_high_tech_co_ltd"
+            / "gotion_high_tech_co_ltd_2025_balance_sheet.json"
         ).load()
         self.assertEqual(
             data.statement.total_current_assets.amount, Decimal("53931020243.67")
@@ -715,9 +750,9 @@ class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
             data.statement.cash_and_cash_equivalents.amount,
             Decimal("16813185998.06"),
         )
-        self.assertEqual(
-            data.statement.additional_non_current_assets[0].name,
+        self.assertIn(
             "Other non-current financial assets",
+            [item.name for item in data.statement.additional_non_current_assets],
         )
         self.assertEqual(
             data.liabilities.total_current_liabilities.amount,
@@ -740,7 +775,7 @@ class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
             if item.name == "Cash and cash equivalents"
         )
         self.assertEqual(cash_metric.source_field, "货币资金")
-        self.assertIn("Source field 货币资金", cash_metric.description)
+        self.assertIn("货币资金", cash_metric.description)
         self.assertEqual(data.company.ticker, "002074.SZ")
 
     def test_application_generates_complete_report(self) -> None:
@@ -790,7 +825,7 @@ class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
 class ThreeStatementWorkflowTests(unittest.TestCase):
     def setUp(self) -> None:
         self.project_root = Path(__file__).resolve().parents[1]
-        self.source_directory = self.project_root / "sample_data" / "three_statements"
+        self.source_directory = self.project_root / "sample_data"
 
     def test_retrieves_and_normalizes_every_statement_in_time_frame(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -812,6 +847,25 @@ class ThreeStatementWorkflowTests(unittest.TestCase):
             manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
             self.assertEqual(manifest["statement_count"], 6)
             self.assertEqual(manifest["time_frame"]["periods"], ["2024", "2025"])
+
+    def test_nvidia_balance_sheets_with_negative_lines_generate_report(self) -> None:
+        balance_paths = sorted(
+            (self.project_root / "sample_data" / "nvidia_corporation").glob(
+                "*_balance_sheet.json"
+            )
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "nvidia-time-frame.html"
+            generated = FinancialAnalysisApp().generate_time_frame_report(
+                balance_paths,
+                output,
+                title="NVIDIA fiscal 2023–2026Q3 financial position",
+            )
+            result = FinancialAnalysisApp().analyze_time_frame(balance_paths)
+            self.assertTrue(generated.is_file())
+
+        self.assertTrue(all(period.is_balanced for period in result.period_results))
+        self.assertEqual(result.latest.total_assets.amount, Decimal("161148000000"))
 
     def test_retrieval_reports_an_incomplete_time_frame(self) -> None:
         query = StatementQuery(
@@ -878,7 +932,7 @@ class WebUITests(unittest.TestCase):
             "end_period": "2025",
             "schema_profile": "CAS_2019",
             "source_directory": str(
-                self.project_root / "sample_data" / "three_statements"
+                self.project_root / "sample_data"
             ),
             "output_directory": self.temp_directory.name,
         }

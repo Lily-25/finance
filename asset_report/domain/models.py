@@ -21,15 +21,13 @@ def _percentage(part: Decimal, whole: Decimal) -> Decimal:
 
 @dataclass(frozen=True)
 class Money:
-    """A non-negative decimal monetary amount."""
+    """A finite decimal monetary amount that may be positive or negative."""
 
     amount: Decimal
 
     def __post_init__(self) -> None:
         if not self.amount.is_finite():
             raise ValueError("Money amount must be finite")
-        if self.amount < 0:
-            raise ValueError("Money amount cannot be negative")
 
     @classmethod
     def from_value(cls, value: object) -> "Money":
@@ -394,7 +392,7 @@ class AssetStatement:
                 source_field=self._metadata_for(name)[0],
             )
             for name in field_names
-            if getattr(self, name).amount > 0
+            if getattr(self, name).amount != 0
         )
 
     def _metadata_for(self, field_name: str) -> tuple[str, str]:
@@ -673,7 +671,7 @@ class LiabilityStatement:
                 source_field=self._metadata_for(name)[0],
             )
             for name in field_names
-            if getattr(self, name).amount > 0
+            if getattr(self, name).amount != 0
         )
 
     def _metadata_for(self, field_name: str) -> tuple[str, str]:

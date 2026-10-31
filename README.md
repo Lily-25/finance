@@ -143,7 +143,7 @@ Rules:
 - `assets.current`, `assets.non_current`, `liabilities.current`, and `liabilities.non_current` must be arrays. Each statement may have an empty classification, but assets and liabilities must each contain at least one item overall.
 - `equity.items` is required and must contain at least one indicator.
 - Every indicator needs a non-empty `name`, `source_field`, and `description` so the normalized value remains traceable to the filed statement.
-- Asset and liability amounts must be finite and non-negative. Equity amounts may be signed; use `is_deduction: true` when a positive source value, such as treasury shares, reduces equity.
+- Every financial amount must be finite and may be positive, zero, or negative. Use a negative source value directly, or use `is_deduction: true` when a positive filed value reduces its containing balance. Reported rows marked `is_subtotal: true` are retained for traceability but are not added again when producing the financial-position report.
 - Amounts may be JSON numbers or decimal strings. Strings are useful when the source must preserve exact decimal notation.
 - Total assets must be greater than zero. The report checks `assets = liabilities + equity` with a tolerance of 0.01.
 - Names must be unique within each statement class, ignoring letter case.

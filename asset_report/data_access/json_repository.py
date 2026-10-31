@@ -260,7 +260,7 @@ class FinancialDataValidator:
         items: list[object],
         statement_name: str,
         section: str,
-        signed: bool = False,
+        signed: bool = True,
     ) -> None:
         seen_names: set[str] = set()
         for index, item in enumerate(items):
@@ -325,17 +325,25 @@ class FinancialStatementMapper:
         assets = statement["assets"]
         liabilities = statement["liabilities"]
         equity = statement["equity"]
-        current_assets = tuple(self._map_asset(item) for item in assets["current"])
+        current_assets = tuple(
+            self._map_asset(item) for item in self._component_items(assets["current"])
+        )
         non_current_assets = tuple(
-            self._map_asset(item) for item in assets["non_current"]
+            self._map_asset(item)
+            for item in self._component_items(assets["non_current"])
         )
         current_liabilities = tuple(
-            self._map_liability(item) for item in liabilities["current"]
+            self._map_liability(item)
+            for item in self._component_items(liabilities["current"])
         )
         non_current_liabilities = tuple(
-            self._map_liability(item) for item in liabilities["non_current"]
+            self._map_liability(item)
+            for item in self._component_items(liabilities["non_current"])
         )
-        equity_items = tuple(self._map_equity(item) for item in equity["items"])
+        equity_items = tuple(
+            self._map_equity(item)
+            for item in self._component_items(equity["items"])
+        )
         return FinancialStatementData(
             company=Company(
                 name=identity["company"],
@@ -351,10 +359,23 @@ class FinancialStatementMapper:
         )
 
     @staticmethod
+    def _component_items(items: list[dict[str, Any]]) -> tuple[dict[str, Any], ...]:
+        """Exclude reported subtotals when adapting normalized statements."""
+
+        return tuple(item for item in items if not item.get("is_subtotal", False))
+
+    @staticmethod
+    def _amount(item: dict[str, Any]) -> Money:
+        amount = Money.from_value(item["amount"])
+        if item.get("is_deduction", False) and amount.amount > 0:
+            return Money(-amount.amount)
+        return amount
+
+    @staticmethod
     def _map_asset(item: dict[str, Any]) -> AssetItem:
         return AssetItem(
             name=item["name"],
-            amount=Money.from_value(item["amount"]),
+            amount=FinancialStatementMapper._amount(item),
             source_field=item["source_field"],
             description=item["description"],
         )
@@ -363,7 +384,7 @@ class FinancialStatementMapper:
     def _map_liability(item: dict[str, Any]) -> LiabilityItem:
         return LiabilityItem(
             name=item["name"],
-            amount=Money.from_value(item["amount"]),
+            amount=FinancialStatementMapper._amount(item),
             source_field=item["source_field"],
             description=item["description"],
         )

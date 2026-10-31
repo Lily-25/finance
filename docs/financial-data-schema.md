@@ -45,10 +45,10 @@ contract:
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `name` | Yes | Canonical English name, or a stable company-specific name when no canonical field fits. |
-| `amount` | Yes | Exact amount in the root currency and scale. Decimal strings are recommended. Asset and liability values are non-negative; equity values may be signed. |
+| `amount` | Yes | Exact signed amount in the root currency and scale. Decimal strings are recommended. Positive, zero, and negative values are accepted for every statement class. |
 | `source_field` | Yes | Exact line caption in the filed source, including the source language, for example `货币资金` or `减：库存股`. |
 | `description` | Yes | Short explanation of what the source caption represents and, when needed, why it maps to the canonical indicator. |
-| `is_deduction` | Equity only, when applicable | Set to `true` when a source presents a positive number that must be subtracted from equity, such as treasury shares. |
+| `is_deduction` | When applicable | Set to `true` when a source presents a positive number that must be subtracted from its statement class, such as accumulated depreciation or treasury shares. |
 
 Example:
 
