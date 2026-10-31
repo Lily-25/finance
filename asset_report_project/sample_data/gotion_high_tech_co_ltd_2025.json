@@ -1,0 +1,65 @@
+{
+  "company": "Gotion High-Tech Co., Ltd.",
+  "ticker": "002074.SZ",
+  "currency": "CNY",
+  "reporting_period": "2025",
+  "source": {
+    "statement": "Consolidated balance sheet",
+    "as_of": "2025-12-31",
+    "basis": "Closing balances in CNY; audited",
+    "report": "Gotion High-Tech Co., Ltd. 2025 Annual Report",
+    "url": "https://static.cninfo.com.cn/finalpage/2026-04-29/1225241936.PDF"
+  },
+  "assets": {
+    "current": [
+      {"name": "Cash and cash equivalents", "amount": "16813185998.06"},
+      {"name": "Trading financial assets", "amount": "2150889376.39"},
+      {"name": "Notes receivable", "amount": "3240804795.42"},
+      {"name": "Accounts receivable", "amount": "16300297490.16"},
+      {"name": "Receivables financing", "amount": "1375348839.80"},
+      {"name": "Prepayments", "amount": "252483940.54"},
+      {"name": "Other receivables", "amount": "312830011.18"},
+      {"name": "Inventory", "amount": "9690157206.01"},
+      {"name": "Non-current assets due within one year", "amount": "88413876.61"},
+      {"name": "Other current assets", "amount": "3706608709.50"}
+    ],
+    "non_current": [
+      {"name": "Debt investments", "amount": "60000000.00"},
+      {"name": "Long-term investments", "amount": "1807750113.80"},
+      {"name": "Equity investments", "amount": "1503215887.75"},
+      {"name": "Other non-current financial assets", "amount": "3358886392.90"},
+      {"name": "Fixed assets", "amount": "42506540834.94"},
+      {"name": "Construction in progress", "amount": "12676514992.83"},
+      {"name": "Right-of-use assets", "amount": "177749724.62"},
+      {"name": "Intangible assets", "amount": "6758523753.47"},
+      {"name": "Development expenditure", "amount": "485566283.80"},
+      {"name": "Goodwill", "amount": "382697712.65"},
+      {"name": "Long-term deferred expenses", "amount": "146714681.09"},
+      {"name": "Deferred tax assets", "amount": "1808365715.37"},
+      {"name": "Other non-current assets", "amount": "1610973401.73"}
+    ]
+  },
+  "liabilities": {
+    "current": [
+      {"name": "Short-term debt", "amount": "19649635531.29"},
+      {"name": "Derivative financial liabilities", "amount": "147993845.05"},
+      {"name": "Notes payable", "amount": "12639869777.39"},
+      {"name": "Accounts payable", "amount": "19149085027.49"},
+      {"name": "Deferred revenue", "amount": "697056960.78"},
+      {"name": "Payroll payable", "amount": "628314507.74"},
+      {"name": "Taxes payable", "amount": "351888281.73"},
+      {"name": "Other payables", "amount": "2071721820.47"},
+      {"name": "Non-current liabilities due within one year", "amount": "8910703760.81"},
+      {"name": "Other current liabilities", "amount": "2087430040.15"}
+    ],
+    "non_current": [
+      {"name": "Long-term debt", "amount": "19252155837.43"},
+      {"name": "Bonds payable", "amount": "600000000.00"},
+      {"name": "Lease liabilities", "amount": "117886403.18"},
+      {"name": "Long-term payables", "amount": "1981440445.99"},
+      {"name": "Provisions", "amount": "845261791.66"},
+      {"name": "Deferred income", "amount": "461772338.89"},
+      {"name": "Deferred tax liabilities", "amount": "715952297.64"}
+    ]
+  }
+}

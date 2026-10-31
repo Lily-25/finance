@@ -358,7 +358,7 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         self.project_root = Path(__file__).resolve().parents[1]
         self.input_paths = sorted(
             (self.project_root / "sample_data").glob(
-                "orion_industrial_group_ltd_*.json"
+                "gotion_high_tech_co_ltd_*.json"
             )
         )
         self.data = JSONFinancialStatementRepository(self.input_paths).load()
@@ -394,18 +394,24 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         )
         self.assertEqual(self.data.time_frame, "2023 to 2026Q3")
 
-    def test_period_files_cover_every_standard_line_item(self) -> None:
+    def test_period_files_reconcile_to_published_balance_sheet_totals(self) -> None:
         self.assertEqual(len(self.input_paths), 4)
-        for statement in self.data.statements:
-            for field_name in (
-                AssetStatement.CURRENT_FIELDS + AssetStatement.NON_CURRENT_FIELDS
-            ):
-                self.assertGreater(getattr(statement.assets, field_name).amount, 0)
-            for field_name in (
-                LiabilityStatement.CURRENT_FIELDS
-                + LiabilityStatement.NON_CURRENT_FIELDS
-            ):
-                self.assertGreater(getattr(statement.liabilities, field_name).amount, 0)
+        expected = {
+            "2023": ("93592652122.38", "67296771086.53"),
+            "2024": ("107839685095.13", "77943425823.11"),
+            "2025": ("127214519738.62", "90308168667.69"),
+            "2026Q3": ("150896057198.11", "111519567377.89"),
+        }
+        for path, statement in zip(self.input_paths, self.data.statements):
+            asset_total, liability_total = expected[statement.reporting_period.label]
+            self.assertEqual(statement.assets.total_assets.amount, Decimal(asset_total))
+            self.assertEqual(
+                statement.liabilities.total_liabilities.amount,
+                Decimal(liability_total),
+            )
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["source"]["statement"], "Consolidated balance sheet")
+            self.assertTrue(payload["source"]["url"].endswith(".PDF"))
 
     def test_multi_file_input_is_sorted_by_reporting_period(self) -> None:
         data = JSONFinancialStatementRepository(list(reversed(self.input_paths))).load()
@@ -415,15 +421,25 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         )
 
     def test_calculates_time_frame_changes(self) -> None:
-        self.assertEqual(self.result.first.total_assets.amount, Decimal("12000000"))
-        self.assertEqual(self.result.latest.total_assets.amount, Decimal("22000000"))
+        self.assertEqual(
+            self.result.first.total_assets.amount, Decimal("93592652122.38")
+        )
+        self.assertEqual(
+            self.result.latest.total_assets.amount, Decimal("150896057198.11")
+        )
         self.assertEqual(
             self.result.asset_change_percentage.quantize(Decimal("0.1")),
-            Decimal("83.3"),
+            Decimal("61.2"),
         )
-        self.assertEqual(self.result.first.total_liabilities.amount, Decimal("7000000"))
-        self.assertEqual(self.result.latest.total_liabilities.amount, Decimal("9900000"))
-        self.assertEqual(self.result.latest.net_assets, Decimal("12100000"))
+        self.assertEqual(
+            self.result.first.total_liabilities.amount,
+            Decimal("67296771086.53"),
+        )
+        self.assertEqual(
+            self.result.latest.total_liabilities.amount,
+            Decimal("111519567377.89"),
+        )
+        self.assertEqual(self.result.latest.net_assets, Decimal("39376489820.22"))
 
     def test_generates_four_time_series_charts(self) -> None:
         charts = AssetCharts().generate(self.result)
@@ -447,8 +463,8 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         self.assertEqual(html.count('<svg class="chart-svg"'), 4)
         self.assertIn("Period comparison", html)
         self.assertIn("2026Q3", html)
-        self.assertIn("83.3%", narrative)
-        self.assertIn("USD 22,000,000.00", narrative)
+        self.assertIn("61.2%", narrative)
+        self.assertIn("CNY 150,896,057,198.11", narrative)
 
     def test_rejects_duplicate_period_labels(self) -> None:
         payload = self.bundled_payload()
@@ -486,7 +502,9 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
         result = FinancialAnalysisApp().analyze_time_frame(self.input_paths)
         self.assertIsInstance(result, TimeFrameAnalysisResult)
         self.assertEqual(result.data.time_frame, "2023 to 2026Q3")
-        self.assertEqual(result.latest.total_assets.amount, Decimal("22000000"))
+        self.assertEqual(
+            result.latest.total_assets.amount, Decimal("150896057198.11")
+        )
 
     def test_time_frame_facade_accepts_one_period_file(self) -> None:
         result = FinancialAnalysisApp().analyze_time_frame(self.input_paths[0])
@@ -506,26 +524,40 @@ class TimeFrameTests(TemporaryJSONMixin, unittest.TestCase):
 
 
 class IntegrationTests(TemporaryJSONMixin, unittest.TestCase):
-    def test_comprehensive_period_input_covers_every_standard_field(self) -> None:
+    def test_real_period_input_maps_standard_and_additional_fields(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         data = JSONFinancialStatementRepository(
             project_root
             / "sample_data"
-            / "orion_industrial_group_ltd_2025.json"
+            / "gotion_high_tech_co_ltd_2025.json"
         ).load()
-        for field_name in AssetStatement.CURRENT_FIELDS + AssetStatement.NON_CURRENT_FIELDS:
-            self.assertGreater(getattr(data.statement, field_name).amount, 0)
-        self.assertEqual(data.statement.total_current_assets.amount, Decimal("6500000"))
-        self.assertEqual(data.statement.total_non_current_assets.amount, Decimal("13500000"))
-        self.assertEqual(data.statement.total_assets.amount, Decimal("20000000"))
-        for field_name in LiabilityStatement.CURRENT_FIELDS + LiabilityStatement.NON_CURRENT_FIELDS:
-            self.assertGreater(getattr(data.liabilities, field_name).amount, 0)
-        self.assertEqual(data.liabilities.total_current_liabilities.amount, Decimal("3500000"))
         self.assertEqual(
-            data.liabilities.total_non_current_liabilities.amount, Decimal("6000000")
+            data.statement.total_current_assets.amount, Decimal("53931020243.67")
         )
-        self.assertEqual(data.liabilities.total_liabilities.amount, Decimal("9500000"))
-        self.assertEqual(data.company.ticker, "OIG")
+        self.assertEqual(
+            data.statement.total_non_current_assets.amount, Decimal("73283499494.95")
+        )
+        self.assertEqual(data.statement.total_assets.amount, Decimal("127214519738.62"))
+        self.assertEqual(
+            data.statement.cash_and_cash_equivalents.amount,
+            Decimal("16813185998.06"),
+        )
+        self.assertEqual(
+            data.statement.additional_non_current_assets[0].name,
+            "Other non-current financial assets",
+        )
+        self.assertEqual(
+            data.liabilities.total_current_liabilities.amount,
+            Decimal("66333699552.90"),
+        )
+        self.assertEqual(
+            data.liabilities.total_non_current_liabilities.amount,
+            Decimal("23974469114.79"),
+        )
+        self.assertEqual(
+            data.liabilities.total_liabilities.amount, Decimal("90308168667.69")
+        )
+        self.assertEqual(data.company.ticker, "002074.SZ")
 
     def test_application_generates_complete_report(self) -> None:
         input_path = self.write_json(valid_payload())

@@ -17,7 +17,7 @@ From this directory, generate the included example:
 python3 -m asset_report
 ```
 
-With no arguments, the module loads the four supplied Orion period files and writes
+With no arguments, the module loads the four supplied Gotion High-Tech period files and writes
 `build/time-frame-report.html`. Direct-file execution uses the same defaults:
 
 ```sh
@@ -48,9 +48,9 @@ Generate the included 2023–2026Q3 time-frame analysis with the same command:
 
 ```sh
 python3 -m asset_report \
-  sample_data/orion_industrial_group_ltd_*.json \
+  sample_data/gotion_high_tech_co_ltd_*.json \
   --output build/time-frame-report.html \
-  --title "Orion 2023–2026Q3 Trend Report"
+  --title "Gotion High-Tech 2023–2026Q3 Financial Position Trend"
 ```
 
 ## Input format
@@ -114,9 +114,19 @@ periods are ordered automatically, so shell expansion order does not affect the 
 Each file repeats `company`, optional `ticker`, `currency`, and `reporting_period`, then
 records that period's asset and liability items using the normal single-statement schema.
 
-The supplied Orion files each contain all 21 standard asset line items and all 16
-standard liability line items. A real statement may omit unavailable lines because the
-domain model safely defaults missing standard fields to zero.
+The supplied Gotion High-Tech files contain real consolidated balance-sheet closing
+balances for 2023, 2024, 2025, and 2026Q3. They retain every non-zero published asset
+and liability line that contributes to the reported totals. Standard lines map to the
+domain model; additional published lines such as derivative financial liabilities,
+bonds payable, long-term payables, and other non-current financial assets remain
+explicit custom items. Missing standard fields safely default to zero.
+
+Each sample file includes a top-level `source` object with the report name, statement
+date, audit status, and official disclosure URL. This metadata is informational and is
+ignored by the report pipeline. The 2023 figures use the audited comparative column in
+the 2024 annual report; 2024 and 2025 are audited year-end figures; 2026Q3 is the
+unaudited consolidated balance sheet at 30 September 2026. Amounts are exact CNY values,
+not rounded millions.
 
 Time-frame rules:
 
@@ -199,10 +209,10 @@ Implementation-aligned PlantUML package and class diagrams are available in [`do
 from asset_report import FinancialAnalysisApp
 
 period_files = [
-    "sample_data/orion_industrial_group_ltd_2023.json",
-    "sample_data/orion_industrial_group_ltd_2024.json",
-    "sample_data/orion_industrial_group_ltd_2025.json",
-    "sample_data/orion_industrial_group_ltd_2026Q3.json",
+    "sample_data/gotion_high_tech_co_ltd_2023.json",
+    "sample_data/gotion_high_tech_co_ltd_2024.json",
+    "sample_data/gotion_high_tech_co_ltd_2025.json",
+    "sample_data/gotion_high_tech_co_ltd_2026Q3.json",
 ]
 
 app = FinancialAnalysisApp()
@@ -239,11 +249,10 @@ The tests cover domain invariants, malformed asset and liability input, one-peri
 README.md
 asset_report/             source package
 docs/plantuml/            system and per-layer class diagrams
-sample_data/assets.json   ready-to-run asset and liability example
-sample_data/orion_industrial_group_ltd_2023.json   complete 2023 statement
-sample_data/orion_industrial_group_ltd_2024.json   complete 2024 statement
-sample_data/orion_industrial_group_ltd_2025.json   complete 2025 statement
-sample_data/orion_industrial_group_ltd_2026Q3.json complete 2026Q3 statement
+sample_data/gotion_high_tech_co_ltd_2023.json   audited 2023 closing balances
+sample_data/gotion_high_tech_co_ltd_2024.json   audited 2024 closing balances
+sample_data/gotion_high_tech_co_ltd_2025.json   audited 2025 closing balances
+sample_data/gotion_high_tech_co_ltd_2026Q3.json unaudited 2026Q3 closing balances
 tests/                    unit and integration tests
 build/                    generated example report
 ```

@@ -18,14 +18,14 @@ def default_arguments() -> list[str]:
     project_root = Path(__file__).resolve().parents[1]
     sample_root = project_root / "sample_data"
     return [
-        str(sample_root / "orion_industrial_group_ltd_2023.json"),
-        str(sample_root / "orion_industrial_group_ltd_2024.json"),
-        str(sample_root / "orion_industrial_group_ltd_2025.json"),
-        str(sample_root / "orion_industrial_group_ltd_2026Q3.json"),
+        str(sample_root / "gotion_high_tech_co_ltd_2023.json"),
+        str(sample_root / "gotion_high_tech_co_ltd_2024.json"),
+        str(sample_root / "gotion_high_tech_co_ltd_2025.json"),
+        str(sample_root / "gotion_high_tech_co_ltd_2026Q3.json"),
         "--output",
         str(project_root / "build" / "time-frame-report.html"),
         "--title",
-        "Orion 2023–2026Q3 Trend Report",
+        "Gotion High-Tech 2023–2026Q3 Financial Position Trend",
     ]
 
 
