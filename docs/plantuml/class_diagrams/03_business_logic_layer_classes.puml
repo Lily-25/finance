@@ -77,6 +77,51 @@ package "Business Logic Layer\nasset_report.business.analysis" #E2F3E7 {
   }
 }
 
+package "Cross-statement Ratio Analysis\nasset_report.business.ratios" #D8EEDB {
+  class FinancialRatioPeriod <<frozen dataclass>> {
+    + period: str
+    + days_in_period: int [0..1]
+    + annualized_flows: bool
+    + current_ratio: Decimal [0..1]
+    + quick_ratio: Decimal [0..1]
+    + debt_ratio: Decimal [0..1]
+    + debt_to_equity_ratio: Decimal [0..1]
+    + interest_coverage_ratio: Decimal [0..1]
+    + inventory_turnover: Decimal [0..1]
+    + days_sales_in_inventory: Decimal [0..1]
+    + receivables_turnover: Decimal [0..1]
+    + days_sales_in_receivables: Decimal [0..1]
+    + total_asset_turnover: Decimal [0..1]
+    + fixed_asset_turnover: Decimal [0..1]
+    + research_and_development_intensity: Decimal [0..1]
+    + profit_margin: Decimal [0..1]
+    + gross_profit_margin: Decimal [0..1]
+    + return_on_assets: Decimal [0..1]
+    + return_on_equity: Decimal [0..1]
+    + earnings_per_share: Decimal [0..1]
+    + price_earnings_ratio: Decimal [0..1]
+  }
+
+  class FinancialRatioAnalysisResult <<frozen dataclass>> {
+    + company: str
+    + ticker: str [0..1]
+    + currency: str
+    + schema_profile: str
+    + periods: tuple(FinancialRatioPeriod)
+    + first: FinancialRatioPeriod {property}
+    + latest: FinancialRatioPeriod {property}
+    + time_frame: str {property}
+  }
+
+  class FinancialRatioAnalysisService {
+    + analyze(bundle: ThreeStatementBundle, market_prices = None): FinancialRatioAnalysisResult
+    - _balance_inputs(statement): _BalanceInputs
+    - _line_amount(statement, canonical_fields, source_contains): Decimal
+    - _section_total(node, total_labels): Decimal
+    - _days_in_period(statement): int [0..1]
+  }
+}
+
 package "Domain Layer" #E3F0F8 {
   class Money <<value object>>
   class SignedMoney <<value object>>
@@ -85,6 +130,7 @@ package "Domain Layer" #E3F0F8 {
   class AssetItem <<entity>>
   class LiabilityItem <<entity>>
   class EquityItem <<entity>>
+  class ThreeStatementBundle <<aggregate>>
 }
 
 FinancialAnalysisService *-- MetricsCalculator
@@ -107,6 +153,11 @@ FinancialMetric --> SignedMoney : signed equity amount
 MetricsCalculator ..> Money
 MetricsCalculator ..> SignedMoney
 
+FinancialRatioAnalysisService ..> ThreeStatementBundle : consumes all three statements
+FinancialRatioAnalysisService ..> FinancialRatioAnalysisResult : creates
+FinancialRatioAnalysisService ..> FinancialRatioPeriod : creates
+FinancialRatioAnalysisResult *-- "1..*" FinancialRatioPeriod
+
 note bottom of FinancialAnalysisService
   Uses Decimal-backed Money and SignedMoney values.
   Rejects an all-zero asset statement.
@@ -114,6 +165,13 @@ note bottom of FinancialAnalysisService
   provenance, and accounting-equation status.
   A one-period series produces snapshot metrics;
   longer series add first-to-latest changes.
+end note
+
+note bottom of FinancialRatioAnalysisService
+  Uses canonical fields across CAS, IFRS-EU, and US-GAAP.
+  Average-balance ratios require a prior period.
+  Partial-period flow ratios are annualized from statement dates.
+  P/E remains unavailable unless period prices are supplied.
 end note
 
 @enduml

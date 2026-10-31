@@ -12,6 +12,11 @@ from .analysis import (
     MetricsCalculator,
     TimeFrameAnalysisResult,
 )
+from .ratios import (
+    FinancialRatioAnalysisResult,
+    FinancialRatioAnalysisService,
+    FinancialRatioPeriod,
+)
 
 __all__ = [
     "AssetAnalysisResult",
@@ -24,4 +29,7 @@ __all__ = [
     "LiabilityMetric",
     "MetricsCalculator",
     "TimeFrameAnalysisResult",
+    "FinancialRatioAnalysisResult",
+    "FinancialRatioAnalysisService",
+    "FinancialRatioPeriod",
 ]

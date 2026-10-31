@@ -1,6 +1,6 @@
 # Financial Position Report Generator
 
-A small, dependency-free Python project that retrieves the three primary financial statements across a time frame, normalizes them to a selected accounting schema, and turns balance-sheet data into a polished, stand-alone HTML report. It supports CAS 2019, IFRS as adopted by the EU, and US GAAP/SEC profiles, preserves source provenance, verifies the accounting equation, calculates composition, liquidity, and leverage with decimal arithmetic, renders four inline SVG charts, and writes a concise interpretation grounded in the supplied values.
+A small, dependency-free Python project that retrieves the three primary financial statements across a time frame, normalizes them to a selected accounting schema, and produces polished, stand-alone HTML reports. It supports CAS 2019, IFRS as adopted by the EU, and US GAAP/SEC profiles, preserves source provenance, verifies the accounting equation, calculates financial-position and cross-statement ratios with decimal arithmetic, observes their trends, renders four inline SVG position charts, and writes concise interpretations grounded in the supplied values.
 
 The report has no JavaScript, external fonts, remote stylesheets, or image files. The generated HTML can be emailed, archived, or opened locally in any modern browser.
 
@@ -17,7 +17,7 @@ Start the local analysis UI:
 python3 -m asset_report --ui
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The UI can run three-statement normalization, a financial-position report, or both in one task. Every task gets a persistent timestamped directory below `output/`; the server binds only to localhost by default.
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The UI can run three-statement normalization, a financial-position report, a financial-ratio trend report, or all outputs in one task. Every task gets a persistent timestamped directory below `output/`; the server binds only to localhost by default.
 
 Use another address or port when needed:
 
@@ -194,7 +194,7 @@ The export contains normalized JSON files and a source-to-output `manifest.json`
 from asset_report import FinancialAnalysisApp
 
 result = FinancialAnalysisApp().retrieve_three_statements(
-    "sample_data/three_statements",
+    "sample_data",
     "output/my-normalized-run",
     company="Gotion High-Tech Co., Ltd.",
     start_period="2024",
@@ -204,10 +204,55 @@ result = FinancialAnalysisApp().retrieve_three_statements(
 print(result.manifest_path)
 ```
 
-The bundled `sample_data/three_statements/` directory contains a complete,
-illustrative two-period CAS data set for exercising this workflow. Its figures are
-synthetic and clearly labeled as illustrative; the separate Gotion files retain
-their real-source balance-sheet data.
+The bundled company directories below `sample_data/` include complete Gotion
+High-Tech CAS and NVIDIA US-GAAP three-statement time frames.
+
+### Financial-ratio trend analysis
+
+`FinancialAnalysisApp.analyze_financial_ratios(...)` consumes a complete normalized
+three-statement bundle and calculates, for every period:
+
+- current and quick ratios;
+- debt-to-assets, debt-to-equity, and interest coverage;
+- inventory, receivables, total-asset, and fixed-asset turnover, including inventory
+  and receivables days;
+- R&D intensity, profit margin, gross margin, ROA, ROE, diluted EPS, and optional P/E.
+
+Turnover, ROA, and ROE use average opening and closing balances. A first-period value
+that needs an opening balance is reported as unavailable instead of silently using an
+ending balance. Flow-based ratios for a partial period are annualized from the inclusive
+statement dates; margins, coverage, R&D intensity, and filed EPS remain year-to-date.
+P/E is unavailable unless the caller supplies a price for that reporting period because
+market prices are not contained in the three statements.
+
+```python
+from asset_report import FinancialAnalysisApp
+
+app = FinancialAnalysisApp()
+ratios = app.analyze_financial_ratios(
+    "sample_data",
+    company="NVIDIA Corporation",
+    start_period="2023",
+    end_period="2026Q3",
+    schema_profile="US_GAAP_SEC",
+)
+print(ratios.latest.current_ratio)
+print(ratios.latest.profit_margin)
+
+report = app.generate_financial_ratio_report(
+    "sample_data",
+    "build/nvidia-financial-ratio-report.html",
+    company="NVIDIA Corporation",
+    start_period="2023",
+    end_period="2026Q3",
+    schema_profile="US_GAAP_SEC",
+)
+print(report)
+```
+
+API callers may pass `market_prices={"2025": "120.00"}` to calculate P/E for
+selected periods. The UI intentionally leaves P/E as `N/A` because it does not infer
+a valuation date or retrieve market data.
 
 ### Time-frame input
 
@@ -280,7 +325,7 @@ preserved as additional indicators and still contribute to totals.
 
 `LiabilityStatement` calculates `total_current_liabilities`, `total_non_current_liabilities`, `total_liabilities`, `component_percentages`, and `percentage_of_total(component)`. `FinancialStatementData` combines `Company`, `AssetStatement`, `LiabilityStatement`, and `EquityStatement`; the analysis also calculates liabilities and equity as percentages of assets, the current ratio, and the accounting-equation difference.
 
-`FinancialTimeSeriesData` contains one or more ordered `FinancialStatementData` snapshots. `TimeFrameAnalysisResult` is the only public analysis result exposed by `FinancialAnalysisApp`. With one period, `first` and `latest` refer to the same snapshot and change metrics are zero; with multiple periods, it compares first and latest totals, percentage changes, net assets, liability-to-asset percentage points, and current ratios.
+`FinancialTimeSeriesData` contains one or more ordered `FinancialStatementData` snapshots. `TimeFrameAnalysisResult` exposes financial-position analysis, while `FinancialRatioAnalysisResult` exposes cross-statement period ratios and first/latest trend accessors. With one position period, `first` and `latest` refer to the same snapshot and change metrics are zero; with multiple periods, the position result compares totals, percentage changes, net assets, liability-to-asset percentage points, and current ratios.
 
 ```python
 from asset_report.domain import AssetStatement, EquityStatement, LiabilityStatement
@@ -312,6 +357,11 @@ All user-provided text is HTML-escaped in both the report and SVG charts.
 
 In time-frame mode, the four charts change to assets/liabilities/equity, reported equity, current ratio, and liabilities-to-assets across periods. The report also includes a period comparison table, balance status for every period, and the latest-period asset, liability, and equity details.
 
+The separate financial-ratio trend report contains latest-period KPI cards, a concise
+trend interpretation, tables for all supported liquidity, leverage, efficiency,
+profitability, return, EPS, and P/E indicators, plus explicit average-balance,
+annualization, and market-price notes.
+
 ## Architecture
 
 The implementation follows the supplied layered PlantUML package plans with assets, liabilities, equity, and source provenance carried consistently through every layer:
@@ -320,10 +370,10 @@ The implementation follows the supplied layered PlantUML package plans with asse
 asset_report/
 ├── presentation/       CLI parsing and user-facing messages
 ├── application/        application facade, configuration, use-case orchestration
-├── business/           asset/liability/equity metrics, ratios, immutable analysis result
+├── business/           position metrics and cross-statement ratio/trend analysis
 ├── domain/             company, money, complete financial position, repository contract
 ├── data_access/        JSON reader, standardizer, validator, mapper, repository adapter
-└── output/             narratives, four SVG charts, HTML template, file exporter
+└── output/             narratives, SVG charts, position/ratio HTML reports, exporter
 ```
 
 Dependency direction follows the plans: presentation calls application; application coordinates business, data access, and output; business depends on domain; the JSON adapter implements the domain repository contract; output consumes analysis results.
@@ -356,8 +406,9 @@ output = app.generate_time_frame_report(
 print(output)
 ```
 
-`analyze_time_frame(...)`, `generate_time_frame_report(...)`, and
-`retrieve_three_statements(...)` form the public facade. Report operations accept
+`analyze_time_frame(...)`, `generate_time_frame_report(...)`,
+`retrieve_three_statements(...)`, `analyze_financial_ratios(...)`, and
+`generate_financial_ratio_report(...)` form the public facade. Position-report operations accept
 either one path or a sequence of paths. A single statement follows the same time-frame
 pipeline as a multi-period comparison.
 
@@ -373,8 +424,9 @@ python3 scripts/run_tests.py
 Each run stores `unittest-results.txt` and a machine-readable `summary.json` and is
 retained locally for inspection. The tests cover domain invariants, all three
 statement contracts, time-frame completeness, schema normalization, the task UI,
-accounting-equation reconciliation, ratios, narratives, charts, export behavior,
-CLI errors, and the unified report mode.
+accounting-equation reconciliation, cross-statement ratios, partial-period
+annualization, optional P/E, narratives, charts, export behavior, CLI errors, and
+the unified report mode.
 
 ## Project files
 
@@ -388,7 +440,8 @@ sample_data/gotion_high_tech_co_ltd_2023.json   audited 2023 closing balances
 sample_data/gotion_high_tech_co_ltd_2024.json   audited 2024 closing balances
 sample_data/gotion_high_tech_co_ltd_2025.json   audited 2025 closing balances
 sample_data/gotion_high_tech_co_ltd_2026Q3.json unaudited 2026Q3 closing balances
-sample_data/three_statements/ complete illustrative 2024–2025 three-statement set
+sample_data/gotion_high_tech_co_ltd/ complete CAS three-statement time frame
+sample_data/nvidia_corporation/ complete US-GAAP three-statement time frame
 tests/                    unit and integration tests
 build/                    generated example report
 output/                   ignored timestamped task and unittest results

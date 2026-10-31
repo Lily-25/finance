@@ -65,10 +65,27 @@ package "Reporting and Export\nasset_report.output.reporting" #F3EDFA {
   }
 }
 
+package "Ratio Trend Reporting\nasset_report.output.ratio_reporting" #E7DFF5 {
+  class FinancialRatioNarrativeGenerator {
+    + generate(result: FinancialRatioAnalysisResult): tuple(str)
+    - _first_available(result, attribute): tuple
+    - _movement_from_pair(label, start, end, formatting): str
+  }
+
+  class FinancialRatioReportBuilder {
+    - narrative_generator: FinancialRatioNarrativeGenerator
+    + build(result: FinancialRatioAnalysisResult, report_title = None): str
+    - _table(result, metrics): str
+    - _kpi(label, value, kind, currency): str
+    - _value(value, kind, currency): str
+  }
+}
+
 package "Business Logic Layer" #E2F3E7 {
   class FinancialAnalysisResult
   class FinancialMetric
   class TimeFrameAnalysisResult
+  class FinancialRatioAnalysisResult
 }
 
 FinancialCharts ..|> ChartGenerator
@@ -84,6 +101,10 @@ ReportBuilder *-- ReportTemplate
 ReportBuilder ..> FinancialAnalysisResult : summarizes
 ReportBuilder ..> TimeFrameAnalysisResult : summarizes
 ReportBuilder ..> Chart : embeds SVG
+
+FinancialRatioNarrativeGenerator ..> FinancialRatioAnalysisResult : interprets
+FinancialRatioReportBuilder *-- FinancialRatioNarrativeGenerator
+FinancialRatioReportBuilder ..> FinancialRatioAnalysisResult : summarizes
 
 note right of FinancialCharts
   Produces four accessible SVGs for either mode.

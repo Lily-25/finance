@@ -896,6 +896,104 @@ class ThreeStatementWorkflowTests(unittest.TestCase):
             self.assertTrue(first.name.startswith("unittest-"))
 
 
+class FinancialRatioAnalysisTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.project_root = Path(__file__).resolve().parents[1]
+        self.source_directory = self.project_root / "sample_data"
+        self.app = FinancialAnalysisApp()
+
+    def analyze_nvidia(self, **overrides: object):
+        arguments = {
+            "company": "NVIDIA Corporation",
+            "start_period": "2023",
+            "end_period": "2026Q3",
+            "schema_profile": "US_GAAP_SEC",
+        }
+        arguments.update(overrides)
+        return self.app.analyze_financial_ratios(
+            self.source_directory, **arguments
+        )
+
+    def test_calculates_requested_nvidia_ratio_time_series(self) -> None:
+        result = self.analyze_nvidia()
+
+        self.assertEqual(result.time_frame, "2023 to 2026Q3")
+        self.assertEqual(len(result.periods), 4)
+        self.assertEqual(
+            result.first.current_ratio.quantize(Decimal("0.01")), Decimal("3.52")
+        )
+        self.assertEqual(
+            result.latest.quick_ratio.quantize(Decimal("0.01")), Decimal("3.71")
+        )
+        self.assertEqual(
+            (result.latest.debt_ratio * Decimal("100")).quantize(Decimal("0.01")),
+            Decimal("26.22"),
+        )
+        self.assertEqual(
+            result.latest.interest_coverage_ratio.quantize(Decimal("0.01")),
+            Decimal("490.53"),
+        )
+        self.assertEqual(result.latest.earnings_per_share, Decimal("3.14"))
+        self.assertIsNone(result.latest.price_earnings_ratio)
+
+    def test_uses_average_balances_and_annualizes_partial_period_flows(self) -> None:
+        result = self.analyze_nvidia()
+        fiscal_2024 = result.periods[1]
+        fiscal_2026_q3 = result.latest
+
+        self.assertIsNone(result.first.inventory_turnover)
+        self.assertIsNone(result.first.return_on_assets)
+        self.assertEqual(
+            fiscal_2024.inventory_turnover.quantize(Decimal("0.01")),
+            Decimal("3.18"),
+        )
+        self.assertEqual(
+            fiscal_2024.days_sales_in_inventory.quantize(Decimal("0.01")),
+            Decimal("114.64"),
+        )
+        self.assertEqual(fiscal_2026_q3.days_in_period, 273)
+        self.assertTrue(fiscal_2026_q3.annualized_flows)
+        self.assertEqual(
+            fiscal_2026_q3.receivables_turnover.quantize(Decimal("0.01")),
+            Decimal("7.00"),
+        )
+        self.assertEqual(
+            (fiscal_2026_q3.return_on_equity * Decimal("100")).quantize(
+                Decimal("0.01")
+            ),
+            Decimal("104.02"),
+        )
+
+    def test_calculates_pe_only_when_period_market_price_is_supplied(self) -> None:
+        result = self.analyze_nvidia(market_prices={"2025": "120"})
+
+        self.assertEqual(
+            result.periods[2].price_earnings_ratio.quantize(Decimal("0.01")),
+            Decimal("40.82"),
+        )
+        self.assertIsNone(result.latest.price_earnings_ratio)
+
+    def test_generates_standalone_ratio_trend_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "financial-ratio-report.html"
+            generated = self.app.generate_financial_ratio_report(
+                self.source_directory,
+                output,
+                company="NVIDIA Corporation",
+                start_period="2023",
+                end_period="2026Q3",
+                schema_profile="US_GAAP_SEC",
+            )
+            html = generated.read_text(encoding="utf-8")
+
+        self.assertIn("Financial ratio trends", html)
+        self.assertIn("Liquidity, leverage, and coverage", html)
+        self.assertIn("Operating efficiency", html)
+        self.assertIn("Profitability and shareholder returns", html)
+        self.assertIn("490.53×", html)
+        self.assertIn("N/A", html)
+
+
 class WebUITests(unittest.TestCase):
     def setUp(self) -> None:
         self.project_root = Path(__file__).resolve().parents[1]
@@ -922,6 +1020,7 @@ class WebUITests(unittest.TestCase):
         with urlopen(self.base_url + "/", timeout=5) as response:
             page = response.read().decode("utf-8")
         self.assertIn("Financial analysis, on demand", page)
+        self.assertIn("financial_ratio_report", page)
         config = self.read_json("/api/config")
         self.assertEqual(len(config["profiles"]), 3)
 
@@ -959,6 +1058,44 @@ class WebUITests(unittest.TestCase):
         ) as response:
             manifest = json.loads(response.read().decode("utf-8"))
         self.assertEqual(manifest["statement_count"], 6)
+
+    def test_ui_runs_financial_ratio_report_task(self) -> None:
+        payload = {
+            "action": "financial_ratio_report",
+            "company": "NVIDIA Corporation",
+            "start_period": "2025",
+            "end_period": "2025",
+            "schema_profile": "US_GAAP_SEC",
+            "source_directory": str(self.project_root / "sample_data"),
+            "output_directory": self.temp_directory.name,
+        }
+        request = Request(
+            self.base_url + "/api/tasks",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request, timeout=5) as response:
+            task = json.loads(response.read().decode("utf-8"))
+
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            task = self.read_json(f"/api/tasks/{task['id']}")
+            if task["status"] in {"succeeded", "failed"}:
+                break
+            time.sleep(0.05)
+
+        self.assertEqual(task["status"], "succeeded", task["message"])
+        self.assertEqual(
+            [artifact["name"] for artifact in task["artifacts"]],
+            ["financial-ratio-report.html"],
+        )
+        with urlopen(
+            self.base_url + f"/api/tasks/{task['id']}/artifacts/0", timeout=5
+        ) as response:
+            html = response.read().decode("utf-8")
+        self.assertIn("Financial Ratio Trends", html)
+        self.assertIn("Profitability and shareholder returns", html)
 
 
 if __name__ == "__main__":

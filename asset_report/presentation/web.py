@@ -81,7 +81,7 @@ PAGE = r"""<!doctype html>
       <div class="card-head"><h2>Start an analysis task</h2><p>Every run receives its own timestamped directory below the selected output folder.</p></div>
       <form id="task-form">
         <div class="fields">
-          <div class="wide"><label for="action">Task</label><select id="action" name="action"><option value="full_analysis">Normalize all three statements + financial-position report</option><option value="normalize_statements">Normalize all three statements</option><option value="financial_position_report">Generate financial-position report</option></select></div>
+          <div class="wide"><label for="action">Task</label><select id="action" name="action"><option value="full_analysis">Normalize statements + position and ratio-trend reports</option><option value="normalize_statements">Normalize all three statements</option><option value="financial_position_report">Generate financial-position report</option><option value="financial_ratio_report">Generate financial-ratio trend report</option></select></div>
           <div class="wide"><label for="company">Company</label><input id="company" name="company" value="Gotion High-Tech Co., Ltd." required></div>
           <div><label for="start_period">Start period</label><input id="start_period" name="start_period" value="2024" pattern="[0-9]{4}(Q[1-4])?" required></div>
           <div><label for="end_period">End period</label><input id="end_period" name="end_period" value="2025" pattern="[0-9]{4}(Q[1-4])?" required></div>
@@ -100,7 +100,7 @@ PAGE = r"""<!doctype html>
 </main>
 <script>
 const form=document.querySelector('#task-form'), tasksNode=document.querySelector('#tasks'), submit=document.querySelector('#submit');
-const labels={full_analysis:'Full analysis',normalize_statements:'Normalize statements',financial_position_report:'Position report'};
+const labels={full_analysis:'Full analysis',normalize_statements:'Normalize statements',financial_position_report:'Position report',financial_ratio_report:'Ratio trend report'};
 const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 async function loadConfig(){const response=await fetch('/api/config');const config=await response.json();document.querySelector('#source_directory').value=config.default_source_directory;document.querySelector('#output_directory').value=config.default_output_directory;const select=document.querySelector('#schema_profile');select.innerHTML=config.profiles.map(p=>`<option value="${escapeHtml(p.profile)}">${escapeHtml(p.profile)} · ${escapeHtml(p.standard)}</option>`).join('');}
 async function refresh(){const response=await fetch('/api/tasks');const data=await response.json();if(!data.tasks.length){tasksNode.innerHTML='<div class="empty">No tasks started yet.</div>';return;}tasksNode.innerHTML=data.tasks.map(task=>{const links=(task.artifacts||[]).map((item,index)=>`<a href="/api/tasks/${task.id}/artifacts/${index}" target="_blank">${escapeHtml(item.name)}</a>`).join('');return `<article class="task"><div class="task-top"><div class="task-title">${escapeHtml(labels[task.action]||task.action)}</div><span class="status ${escapeHtml(task.status)}">${escapeHtml(task.status)}</span></div><div class="task-meta">${escapeHtml(task.company)} · ${escapeHtml(task.start_period)}–${escapeHtml(task.end_period)} · ${escapeHtml(task.schema_profile)}</div>${task.message?`<div class="task-message ${task.status==='failed'?'error':''}">${escapeHtml(task.message)}</div>`:''}${links?`<div class="artifacts">${links}</div>`:''}</article>`;}).join('');}
@@ -152,7 +152,12 @@ class AnalysisTask:
 
 
 class AnalysisTaskManager:
-    ACTIONS = {"normalize_statements", "financial_position_report", "full_analysis"}
+    ACTIONS = {
+        "normalize_statements",
+        "financial_position_report",
+        "financial_ratio_report",
+        "full_analysis",
+    }
 
     def __init__(self) -> None:
         self._tasks: dict[str, AnalysisTask] = {}
@@ -244,6 +249,23 @@ class AnalysisTaskManager:
                 )
                 artifacts.insert(0, report_path)
 
+            if task.action in {"financial_ratio_report", "full_analysis"}:
+                self._update(task_id, message="Calculating financial-ratio trends")
+                ratio_report_path = run_directory / "financial-ratio-report.html"
+                app.generate_financial_ratio_report(
+                    task.source_directory,
+                    ratio_report_path,
+                    company=task.company,
+                    start_period=task.start_period,
+                    end_period=task.end_period,
+                    schema_profile=task.schema_profile,
+                    title=(
+                        f"{task.company} {task.start_period}–{task.end_period} "
+                        "Financial Ratio Trends"
+                    ),
+                )
+                artifacts.insert(0, ratio_report_path)
+
             message = f"Completed with {len(artifacts)} artifact(s) in {run_directory}"
             self._update(
                 task_id,
@@ -261,7 +283,7 @@ def make_handler(
     project_root: Path,
 ) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
-        server_version = "AssetReportUI/5.0"
+        server_version = "AssetReportUI/5.1"
 
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
             path = urlparse(self.path).path

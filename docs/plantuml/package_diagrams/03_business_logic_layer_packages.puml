@@ -12,19 +12,25 @@ skinparam componentStyle rectangle
 package "asset_report.business" as Business #E2F3E7 {
   [__init__.py] as BusinessAPI
   [analysis.py] as AnalysisModule
+  [ratios.py] as RatioModule
   BusinessAPI ..> AnalysisModule : re-exports
+  BusinessAPI ..> RatioModule : re-exports
 }
 
 package "asset_report.domain" as Domain #E3F0F8 {
   [models.py] as ModelsModule
+  [statement_bundle.py] as BundleModule
 }
 
 AnalysisModule ..> ModelsModule : asset/liability/equity items + financial aggregates + money values
+RatioModule ..> BundleModule : normalized three-statement time frames
 
 note bottom of Business
   analysis.py contains MetricsCalculator,
   FinancialMetric, FinancialAnalysisResult, and
   TimeFrameAnalysisResult plus FinancialAnalysisService.
+  ratios.py calculates liquidity, leverage, efficiency,
+  profitability, return, EPS, and optional P/E trends.
 
   Paired class diagram:
   03_business_logic_layer_classes.puml

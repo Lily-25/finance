@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from ..business.analysis import FinancialAnalysisService, TimeFrameAnalysisResult
+from ..business.ratios import (
+    FinancialRatioAnalysisResult,
+    FinancialRatioAnalysisService,
+)
 from ..data_access.json_repository import JSONFinancialStatementRepository
+from ..data_access.statement_repository import JSONStatementDirectoryRepository
 from ..output.charts import FinancialCharts
+from ..output.ratio_reporting import FinancialRatioReportBuilder
 from ..output.reporting import ReportBuilder, ReportFileExporter
 from ..domain.statement_bundle import StatementQuery
 from .statement_tasks import RetrieveAndNormalizeThreeStatements, StatementExportResult
@@ -18,6 +25,7 @@ from .use_cases import GenerateTimeFrameReport, as_time_frame_data
 @dataclass(frozen=True)
 class ApplicationConfig:
     default_output: Path = Path("build/time-frame-report.html")
+    default_ratio_output: Path = Path("build/financial-ratio-report.html")
 
 
 class DependencyContainer:
@@ -31,6 +39,15 @@ class DependencyContainer:
             report_builder=ReportBuilder(),
             exporter=ReportFileExporter(),
         )
+
+    def financial_ratio_analysis_service(self) -> FinancialRatioAnalysisService:
+        return FinancialRatioAnalysisService()
+
+    def financial_ratio_report_builder(self) -> FinancialRatioReportBuilder:
+        return FinancialRatioReportBuilder()
+
+    def report_exporter(self) -> ReportFileExporter:
+        return ReportFileExporter()
 
 
 class FinancialAnalysisApp:
@@ -90,6 +107,55 @@ class FinancialAnalysisApp:
         return RetrieveAndNormalizeThreeStatements().execute(
             source_directory, output_directory, query
         )
+
+    def analyze_financial_ratios(
+        self,
+        source_directory: str | Path,
+        *,
+        company: str,
+        start_period: str,
+        end_period: str,
+        schema_profile: str,
+        market_prices: Mapping[str, Decimal | int | float | str] | None = None,
+    ) -> FinancialRatioAnalysisResult:
+        """Calculate cross-statement financial ratios for an inclusive time frame."""
+
+        query = StatementQuery(
+            company=company,
+            start_period=start_period,
+            end_period=end_period,
+            schema_profile=schema_profile,
+        )
+        bundle = JSONStatementDirectoryRepository(source_directory).retrieve(query)
+        return self.container.financial_ratio_analysis_service().analyze(
+            bundle, market_prices=market_prices
+        )
+
+    def generate_financial_ratio_report(
+        self,
+        source_directory: str | Path,
+        output_path: str | Path | None = None,
+        *,
+        company: str,
+        start_period: str,
+        end_period: str,
+        schema_profile: str,
+        title: str | None = None,
+        market_prices: Mapping[str, Decimal | int | float | str] | None = None,
+    ) -> Path:
+        """Generate a stand-alone financial-ratio trend report."""
+
+        result = self.analyze_financial_ratios(
+            source_directory,
+            company=company,
+            start_period=start_period,
+            end_period=end_period,
+            schema_profile=schema_profile,
+            market_prices=market_prices,
+        )
+        html = self.container.financial_ratio_report_builder().build(result, title)
+        destination = output_path or self.config.default_ratio_output
+        return self.container.report_exporter().export(html, destination)
 
     @staticmethod
     def _normalize_period_paths(

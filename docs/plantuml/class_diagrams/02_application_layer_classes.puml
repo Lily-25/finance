@@ -12,11 +12,15 @@ skinparam classAttributeIconSize 0
 package "Application Facade and Configuration\nasset_report.application.app" #E3EEFF {
   class ApplicationConfig <<frozen dataclass>> {
     + default_output: Path = build/time-frame-report.html
+    + default_ratio_output: Path = build/financial-ratio-report.html
   }
 
   class DependencyContainer {
     + financial_analysis_service(): FinancialAnalysisService
     + generate_time_frame_report(): GenerateTimeFrameReport
+    + financial_ratio_analysis_service(): FinancialRatioAnalysisService
+    + financial_ratio_report_builder(): FinancialRatioReportBuilder
+    + report_exporter(): ReportFileExporter
   }
 
   class FinancialAnalysisApp {
@@ -25,6 +29,9 @@ package "Application Facade and Configuration\nasset_report.application.app" #E3
     + __init__(config: ApplicationConfig = None, container: DependencyContainer = None)
     + analyze_time_frame(input_paths): TimeFrameAnalysisResult
     + generate_time_frame_report(input_paths, output_path = None, title = None): Path
+    + retrieve_three_statements(source_directory, output_directory, query fields): StatementExportResult
+    + analyze_financial_ratios(source_directory, query fields, market_prices = None): FinancialRatioAnalysisResult
+    + generate_financial_ratio_report(source_directory, output_path, query fields, market_prices = None): Path
     - {static} _normalize_period_paths(input_paths): tuple
   }
 }
@@ -44,6 +51,8 @@ package "Business Logic Layer" #E2F3E7 {
   class FinancialAnalysisService
   class FinancialAnalysisResult <<frozen dataclass>>
   class TimeFrameAnalysisResult <<frozen dataclass>>
+  class FinancialRatioAnalysisService
+  class FinancialRatioAnalysisResult <<frozen dataclass>>
 }
 
 package "Domain Layer" #E3F0F8 {
@@ -52,6 +61,7 @@ package "Domain Layer" #E3F0F8 {
 
 package "Data Access Layer" #FFF0DA {
   class JSONFinancialStatementRepository
+  class JSONStatementDirectoryRepository
 }
 
 package "Output Layer" #EEE5FA {
@@ -59,6 +69,7 @@ package "Output Layer" #EEE5FA {
   class FinancialCharts
   class ReportBuilder
   class ReportFileExporter
+  class FinancialRatioReportBuilder
 }
 
 FinancialAnalysisApp *-- ApplicationConfig
@@ -67,12 +78,18 @@ FinancialAnalysisApp ..> JSONFinancialStatementRepository : creates from one or 
 FinancialAnalysisApp ..> GenerateTimeFrameReport : requests
 FinancialAnalysisApp ..> FinancialAnalysisService : requests direct analysis
 FinancialAnalysisApp ..> TimeFrameAnalysisResult : returns
+FinancialAnalysisApp ..> JSONStatementDirectoryRepository : retrieves three-statement bundle
+FinancialAnalysisApp ..> FinancialRatioAnalysisService : calculates ratio trends
+FinancialAnalysisApp ..> FinancialRatioAnalysisResult : returns
+FinancialAnalysisApp ..> FinancialRatioReportBuilder : builds ratio report
 
 DependencyContainer ..> GenerateTimeFrameReport : assembles
 DependencyContainer ..> FinancialAnalysisService : creates
 DependencyContainer ..> FinancialCharts : creates
 DependencyContainer ..> ReportBuilder : creates
 DependencyContainer ..> ReportFileExporter : creates
+DependencyContainer ..> FinancialRatioAnalysisService : creates
+DependencyContainer ..> FinancialRatioReportBuilder : creates
 
 GenerateTimeFrameReport --> FinancialStatementRepository : load()
 GenerateTimeFrameReport --> FinancialAnalysisService : analyze()

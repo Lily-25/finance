@@ -13,22 +13,27 @@ package "asset_report.output" as Output #EEE5FA {
   [__init__.py] as OutputAPI
   [charts.py] as ChartsModule
   [reporting.py] as ReportingModule
+  [ratio_reporting.py] as RatioReportingModule
 
   OutputAPI ..> ChartsModule : re-exports charts
   OutputAPI ..> ReportingModule : re-exports reporting
+  OutputAPI ..> RatioReportingModule : re-exports ratio reporting
   ReportingModule ..> ChartsModule : Chart
 }
 
 package "asset_report.business" as Business #E2F3E7 {
   [analysis.py] as AnalysisModule
+  [ratios.py] as RatioModule
 }
 
 ChartsModule ..> AnalysisModule : results + metrics
 ReportingModule ..> AnalysisModule : results + metrics
+RatioReportingModule ..> RatioModule : ratio result + period metrics
 
 note bottom of Output
   charts.py generates four accessible snapshot or trend SVGs.
   reporting.py creates mode-specific narrative, HTML, and export.
+  ratio_reporting.py creates the standalone ratio-trend report.
 
   Paired class diagram:
   06_output_layer_classes.puml
