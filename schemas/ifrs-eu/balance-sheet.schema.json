@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/ifrs-eu/balance-sheet.schema.json",
+  "title": "IFRS/EU statement of financial position",
+  "description": "Statement-of-financial-position input aligned with IAS 1 minimum line items and the corresponding requirements carried into IFRS 18. State the exact EU-endorsed edition in schema metadata.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "assets", "liabilities", "equity"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["presentation_basis"], "properties": {"profile": {"const": "IFRS_EU"}, "statement_type": {"const": "balance_sheet"}, "presentation_basis": {"enum": ["current_non_current", "liquidity", "mixed"]}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "assets": {"$ref": "#/$defs/classifiedAssets"},
+    "liabilities": {"$ref": "#/$defs/classifiedLiabilities"},
+    "equity": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {"type": "array", "items": {"$ref": "#/$defs/equityItem"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "reported_total_liabilities_and_equity": {"$ref": "#/$defs/totalItem"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "classifiedAssets": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/assetItem"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/assetItem"}},
+        "unclassified_liquidity_order": {"type": "array", "items": {"$ref": "#/$defs/assetItem"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "classifiedLiabilities": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/liabilityItem"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/liabilityItem"}},
+        "unclassified_liquidity_order": {"type": "array", "items": {"$ref": "#/$defs/liabilityItem"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "assetItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["property_plant_and_equipment", "right_of_use_assets", "investment_property", "goodwill", "intangible_assets", "financial_assets", "contract_assets", "insurance_contract_assets", "reinsurance_contract_assets", "equity_method_investments", "biological_assets", "inventories", "trade_and_other_receivables", "cash_and_cash_equivalents", "current_tax_assets", "deferred_tax_assets", "assets_held_for_sale", "assets_in_disposal_groups", "other_assets", "other"]}}}
+      ]
+    },
+    "liabilityItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["trade_and_other_payables", "provisions", "financial_liabilities", "borrowings", "lease_liabilities", "contract_liabilities", "insurance_contract_liabilities", "reinsurance_contract_liabilities", "current_tax_liabilities", "deferred_tax_liabilities", "employee_benefit_obligations", "liabilities_held_for_sale", "liabilities_in_disposal_groups", "other_liabilities", "other"]}}}
+      ]
+    },
+    "equityItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["issued_capital", "share_premium", "other_equity_instruments", "treasury_shares", "retained_earnings", "accumulated_other_comprehensive_income", "other_reserves", "equity_attributable_to_owners_of_parent", "non_controlling_interests", "other"]}}}
+      ]
+    },
+    "totalItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"required": ["is_subtotal"], "properties": {"is_subtotal": {"const": true}}}
+      ]
+    }
+  },
+  "x-standard-sources": [
+    "https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements.html/",
+    "https://www.ifrs.org/issued-standards/list-of-standards/ifrs-18-presentation-and-disclosure-in-financial-statements/",
+    "https://finance.ec.europa.eu/financial-markets/company-reporting-and-auditing/company-reporting/financial-reporting_en"
+  ]
+}

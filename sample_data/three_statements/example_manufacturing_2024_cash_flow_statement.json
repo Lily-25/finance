@@ -1,0 +1,43 @@
+{
+  "company": "Example Manufacturing Co., Ltd.",
+  "ticker": "EXM",
+  "reporting_period": "2024",
+  "currency": "USD",
+  "schema": {
+    "profile": "CAS_2019",
+    "standard": "Chinese Accounting Standards for Business Enterprises",
+    "presentation_standard": "2019 consolidated financial statement format",
+    "statement_type": "cash_flow_statement",
+    "statement_scope": "consolidated",
+    "jurisdiction": "China",
+    "monetary_unit": "USD",
+    "amount_scale": "1",
+    "operating_cash_flow_method": "direct"
+  },
+  "source": {
+    "statement": "Consolidated statement of cash flows",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "report": "Example Manufacturing 2024 illustrative annual report",
+    "url": "https://example.com/reports/example-manufacturing-2024"
+  },
+  "operating_activities": [
+    {"name": "Cash received from sales and services", "amount": 1450, "source_field": "Cash receipts from customers", "description": "Illustrative cash collected from customers.", "cash_flow_direction": "inflow"},
+    {"name": "Cash paid for goods and services", "amount": 850, "source_field": "Cash paid to suppliers", "description": "Illustrative payments to manufacturing suppliers.", "cash_flow_direction": "outflow", "is_deduction": true},
+    {"name": "Net cash from operating activities", "amount": 600, "source_field": "Net operating cash flow", "description": "Illustrative reported net operating cash flow.", "cash_flow_direction": "net", "is_subtotal": true}
+  ],
+  "investing_activities": [
+    {"name": "Cash paid to acquire long-term assets", "amount": 400, "source_field": "Purchase of property, plant and equipment", "description": "Illustrative capital expenditure.", "cash_flow_direction": "outflow", "is_deduction": true},
+    {"name": "Net cash from investing activities", "amount": -400, "source_field": "Net investing cash flow", "description": "Illustrative reported net investing cash flow.", "cash_flow_direction": "net", "is_subtotal": true}
+  ],
+  "financing_activities": [
+    {"name": "Cash received from borrowings", "amount": 200, "source_field": "Proceeds from borrowings", "description": "Illustrative new debt proceeds.", "cash_flow_direction": "inflow"},
+    {"name": "Cash paid for debt repayment", "amount": 100, "source_field": "Repayment of borrowings", "description": "Illustrative principal repayments.", "cash_flow_direction": "outflow", "is_deduction": true},
+    {"name": "Net cash from financing activities", "amount": 100, "source_field": "Net financing cash flow", "description": "Illustrative reported net financing cash flow.", "cash_flow_direction": "net", "is_subtotal": true}
+  ],
+  "reconciliation": [
+    {"name": "Net increase in cash and cash equivalents", "amount": 300, "source_field": "Net increase in cash", "description": "Illustrative change in cash during the year.", "cash_flow_direction": "net", "is_subtotal": true},
+    {"name": "Opening cash and cash equivalents", "amount": 300, "source_field": "Cash at beginning of year", "description": "Illustrative opening cash balance.", "cash_flow_direction": "not_applicable"},
+    {"name": "Closing cash and cash equivalents", "amount": 600, "source_field": "Cash at end of year", "description": "Illustrative closing cash balance.", "cash_flow_direction": "not_applicable", "is_subtotal": true}
+  ]
+}

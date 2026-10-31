@@ -1,0 +1,37 @@
+@startuml PresentationLayerPackages
+
+title Financial Position Report Generator - Presentation Layer Packages
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+package "asset_report" as Root #F8FAFC {
+  [__main__.py] as MainModule
+
+  package "presentation" as Presentation #DCEBFA {
+    [cli.py] as CLIModule
+  }
+}
+
+package "asset_report.application" as Application #E3EEFF {
+  [app.py] as AppModule
+}
+
+package "asset_report.data_access" as DataAccess #FFF0DA {
+  [json_repository.py] as JSONRepositoryModule
+}
+
+MainModule ..> CLIModule : imports main
+CLIModule ..> AppModule : FinancialAnalysisApp
+CLIModule ..> JSONRepositoryModule : DataValidationError
+
+note bottom of Presentation
+  Classes/functions detailed in:
+  01_presentation_layer_classes.puml
+end note
+
+@enduml

@@ -1,0 +1,115 @@
+@startuml DataAccessLayerClasses
+
+title Financial Position Report Generator - Data Access Layer Classes
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+package "JSON Data Access\nasset_report.data_access.json_repository" #FFF0DA {
+  class DataValidationError {
+  }
+
+  class JSONReader {
+    + read(path: Path): dict
+  }
+
+  class DataStandardizer {
+    + standardize(data: dict): dict
+    - {static} _standardize_item(item: object): object
+  }
+
+  class FinancialDataValidator {
+    + REQUIRED_ROOT: tuple(str)
+    + validate(data: dict): None
+    - _validate_time_series(data: dict): None
+    - _validate_statement(statement, name, require_item): None
+    - _validate_equity(statement, name): None
+    - {static} _validate_items(items: list, statement_name: str, section: str, signed: bool = false): None
+  }
+
+  class FinancialStatementMapper {
+    + map(data: dict): FinancialStatementData or FinancialTimeSeriesData
+    - _map_time_series(data: dict): FinancialTimeSeriesData
+    - _map_statement(identity: dict, statement: dict): FinancialStatementData
+    - {static} _map_asset(item: dict): AssetItem
+    - {static} _map_liability(item: dict): LiabilityItem
+    - {static} _map_equity(item: dict): EquityItem
+  }
+
+  class JSONFinancialStatementRepository {
+    + path: Path
+    + paths: tuple(Path)
+    + reader: JSONReader
+    + standardizer: DataStandardizer
+    + validator: FinancialDataValidator
+    + mapper: FinancialStatementMapper
+    + __init__(path or paths)
+    + load(): FinancialStatementData or FinancialTimeSeriesData
+    - _load_path(path, allow_embedded_time_series): FinancialStatementData or FinancialTimeSeriesData
+  }
+}
+
+package "Domain Layer" #E3F0F8 {
+  interface FinancialStatementRepository <<Protocol>> {
+    + load(): FinancialStatementData or FinancialTimeSeriesData
+  }
+  class Money <<value object>>
+  class SignedMoney <<value object>>
+  class ReportingPeriod <<value object>>
+  class Company <<entity>>
+  class AssetItem <<entity>>
+  class AssetStatement <<entity>>
+  class LiabilityItem <<entity>>
+  class LiabilityStatement <<entity>>
+  class EquityItem <<entity>>
+  class EquityStatement <<entity>>
+  class FinancialStatementData <<aggregate>>
+  class FinancialTimeSeriesData <<aggregate>>
+}
+
+class ValueError <<Python standard library>>
+
+DataValidationError --|> ValueError
+JSONFinancialStatementRepository ..|> FinancialStatementRepository
+JSONFinancialStatementRepository *-- JSONReader
+JSONFinancialStatementRepository *-- DataStandardizer
+JSONFinancialStatementRepository *-- FinancialDataValidator
+JSONFinancialStatementRepository *-- FinancialStatementMapper
+
+JSONReader ..> DataValidationError : raises
+FinancialDataValidator ..> DataValidationError : raises
+FinancialDataValidator ..> Money : validates amount
+FinancialDataValidator ..> SignedMoney : validates signed equity
+
+FinancialStatementMapper ..> Money : constructs
+FinancialStatementMapper ..> ReportingPeriod : constructs
+FinancialStatementMapper ..> Company : constructs
+FinancialStatementMapper ..> AssetItem : constructs
+FinancialStatementMapper ..> AssetStatement : constructs
+FinancialStatementMapper ..> LiabilityItem : constructs
+FinancialStatementMapper ..> LiabilityStatement : constructs
+FinancialStatementMapper ..> EquityItem : constructs
+FinancialStatementMapper ..> EquityStatement : constructs
+FinancialStatementMapper ..> FinancialStatementData : returns
+FinancialStatementMapper ..> FinancialTimeSeriesData : returns
+
+note right of JSONFinancialStatementRepository
+  One file: read -> standardize -> validate -> map
+  Multiple files: map each complete period,
+  order recognized labels, then compose a time series.
+end note
+
+note bottom of FinancialDataValidator
+  Checks required fields, section types,
+  unique names, required source metadata,
+  non-negative asset/liability amounts, signed equity,
+  complete asset/liability/equity sections, unique periods,
+  matching time-frame boundaries, and consistent
+  identity across separate period files.
+end note
+
+@enduml

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/cas/income-statement.schema.json",
+  "title": "CAS 2019 consolidated income statement",
+  "description": "Income-statement input aligned with the Chinese Ministry of Finance 2019 consolidated financial statement format, 会合02表.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "sections"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["expense_analysis"], "properties": {"profile": {"const": "CAS_2019"}, "statement_type": {"const": "income_statement"}, "expense_analysis": {"const": "function"}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "sections": {
+      "type": "object",
+      "required": ["operating", "profit_and_tax", "attribution", "other_comprehensive_income", "earnings_per_share"],
+      "properties": {
+        "operating": {"type": "array", "items": {"$ref": "#/$defs/operatingItem"}},
+        "profit_and_tax": {"type": "array", "items": {"$ref": "#/$defs/profitItem"}},
+        "attribution": {"type": "array", "items": {"$ref": "#/$defs/attributionItem"}},
+        "other_comprehensive_income": {"type": "array", "items": {"$ref": "#/$defs/ociItem"}},
+        "earnings_per_share": {"type": "array", "items": {"$ref": "#/$defs/epsItem"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "operatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["total_operating_revenue", "operating_revenue", "interest_income", "earned_premiums", "fee_and_commission_income", "total_operating_costs", "cost_of_revenue", "interest_expense_financial_entity", "fee_and_commission_expense", "surrender_payments", "net_insurance_claims", "net_insurance_reserve_expense", "policyholder_dividends", "reinsurance_expense", "taxes_and_surcharges", "selling_expenses", "administrative_expenses", "research_and_development_expenses", "finance_expenses", "interest_expense", "interest_income_finance_expense_offset", "other_income", "investment_income", "equity_method_investment_income", "derecognition_gain_on_amortised_cost_financial_assets", "foreign_exchange_gain_loss", "net_exposure_hedging_gain_loss", "fair_value_change_gain_loss", "credit_impairment_gain_loss", "asset_impairment_gain_loss", "asset_disposal_gain_loss", "operating_profit", "non_operating_income", "non_operating_expense", "other"]}}}
+      ]
+    },
+    "profitItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["profit_before_tax", "income_tax_expense", "net_profit", "profit_from_continuing_operations", "profit_from_discontinued_operations", "other"]}}}
+      ]
+    },
+    "attributionItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["net_profit_attributable_to_owners_of_parent", "net_profit_attributable_to_non_controlling_interests", "comprehensive_income_attributable_to_owners_of_parent", "comprehensive_income_attributable_to_non_controlling_interests", "other"]}}}
+      ]
+    },
+    "ociItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["other_comprehensive_income_net_of_tax", "oci_attributable_to_owners_of_parent", "oci_not_reclassifiable_to_profit_or_loss", "remeasurement_of_defined_benefit_plans", "equity_method_oci_not_reclassifiable", "fair_value_change_of_equity_instruments_at_fvoci", "own_credit_risk_fair_value_change", "oci_reclassifiable_to_profit_or_loss", "equity_method_oci_reclassifiable", "fair_value_change_of_debt_instruments_at_fvoci", "financial_asset_reclassification_to_oci", "credit_loss_allowance_on_debt_instruments_at_fvoci", "cash_flow_hedge_reserve", "foreign_currency_translation_differences", "oci_attributable_to_non_controlling_interests", "total_comprehensive_income", "other"]}}}
+      ]
+    },
+    "epsItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["basic_earnings_per_share", "diluted_earnings_per_share", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-source": "https://www.mof.gov.cn/gkml/caizhengwengao/wg201901/wg201909/202005/P020200507337626447186.pdf"
+}

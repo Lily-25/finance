@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/ifrs-eu/cash-flow-statement.schema.json",
+  "title": "IFRS/EU statement of cash flows",
+  "description": "Cash-flow input aligned with IAS 7, supporting direct or indirect operating presentation and policy-dependent interest and dividend classification.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "operating_activities", "investing_activities", "financing_activities", "reconciliation"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["operating_cash_flow_method"], "properties": {"profile": {"const": "IFRS_EU"}, "statement_type": {"const": "cash_flow_statement"}, "operating_cash_flow_method": {"enum": ["direct", "indirect"]}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "operating_activities": {"type": "array", "items": {"$ref": "#/$defs/operatingItem"}},
+    "investing_activities": {"type": "array", "items": {"$ref": "#/$defs/investingItem"}},
+    "financing_activities": {"type": "array", "items": {"$ref": "#/$defs/financingItem"}},
+    "reconciliation": {"type": "array", "items": {"$ref": "#/$defs/reconciliationItem"}},
+    "non_cash_transactions": {"type": "array", "items": {"$ref": "../common.schema.json#/$defs/lineItem"}},
+    "financing_liability_reconciliation": {"type": "array", "items": {"$ref": "../common.schema.json#/$defs/lineItem"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "operatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_receipts_from_customers", "cash_receipts_from_royalties_fees_and_commissions", "cash_payments_to_suppliers", "cash_payments_to_employees", "cash_receipts_and_payments_from_trading_contracts", "cash_receipts_from_insurance_premiums", "cash_payments_for_insurance_claims", "income_taxes_paid_refunded", "interest_received_operating", "interest_paid_operating", "dividends_received_operating", "dividends_paid_operating", "operating_profit_loss_starting_point", "profit_loss_starting_point", "depreciation_and_amortisation_adjustment", "impairment_adjustment", "non_cash_gain_loss_adjustment", "finance_income_expense_adjustment", "working_capital_changes", "change_in_provisions_and_employee_benefits", "other_operating_adjustments", "net_cash_from_operating_activities", "other"]}}}
+      ]
+    },
+    "investingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["purchase_of_property_plant_equipment_and_intangibles", "proceeds_from_disposal_of_property_plant_equipment_and_intangibles", "acquisition_of_subsidiaries_net_of_cash_acquired", "disposal_of_subsidiaries_net_of_cash_disposed", "purchase_of_investments", "proceeds_from_sale_or_maturity_of_investments", "loans_and_advances_made", "repayment_of_loans_and_advances", "interest_received_investing", "dividends_received_investing", "derivative_cash_flows_investing", "net_cash_from_investing_activities", "other"]}}}
+      ]
+    },
+    "financingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["proceeds_from_issuing_shares", "proceeds_from_issuing_other_equity_instruments", "payments_to_acquire_or_redeem_own_shares", "proceeds_from_borrowings", "repayments_of_borrowings", "lease_liability_principal_payments", "interest_paid_financing", "dividends_paid_financing", "changes_in_ownership_interests_without_loss_of_control", "net_cash_from_financing_activities", "other"]}}}
+      ]
+    },
+    "reconciliationItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["effect_of_exchange_rate_changes", "effect_of_reclassification_to_held_for_sale", "net_increase_decrease_in_cash_and_cash_equivalents", "opening_cash_and_cash_equivalents", "closing_cash_and_cash_equivalents", "restricted_cash_included_in_reconciliation", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-source": "https://www.ifrs.org/issued-standards/list-of-standards/ias-7-statement-of-cash-flows/"
+}

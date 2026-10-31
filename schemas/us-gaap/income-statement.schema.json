@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/us-gaap/income-statement.schema.json",
+  "title": "US GAAP/SEC statement of comprehensive income",
+  "description": "Income-statement input aligned with US GAAP and SEC Regulation S-X Rule 5-03 for commercial and industrial registrants.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "operating", "non_operating", "tax_and_continuing_operations", "attribution", "other_comprehensive_income"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["expense_analysis"], "properties": {"profile": {"const": "US_GAAP_SEC"}, "statement_type": {"const": "income_statement"}, "expense_analysis": {"const": "function"}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "operating": {"type": "array", "items": {"$ref": "#/$defs/operatingItem"}},
+    "non_operating": {"type": "array", "items": {"$ref": "#/$defs/nonOperatingItem"}},
+    "tax_and_continuing_operations": {"type": "array", "items": {"$ref": "#/$defs/taxItem"}},
+    "discontinued_operations": {"type": "array", "items": {"$ref": "#/$defs/discontinuedItem"}},
+    "attribution": {"type": "array", "items": {"$ref": "#/$defs/attributionItem"}},
+    "other_comprehensive_income": {"type": "array", "items": {"$ref": "#/$defs/ociItem"}},
+    "earnings_per_share": {"type": "array", "items": {"$ref": "#/$defs/epsItem"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "operatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["net_sales_of_tangible_products", "operating_revenues", "rental_income", "service_revenues", "other_revenues", "net_sales_and_gross_revenues", "cost_of_tangible_goods_sold", "utility_operating_expenses", "expenses_applicable_to_rental_income", "cost_of_services", "expenses_applicable_to_other_revenues", "other_operating_costs_and_expenses", "selling_general_and_administrative_expenses", "provision_for_credit_losses", "other_general_expenses", "operating_income_loss", "other"]}}}
+      ]
+    },
+    "nonOperatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["dividend_income", "interest_income", "net_gain_loss_on_securities", "other_non_operating_income", "interest_expense_and_debt_discount_amortisation", "other_non_operating_expenses", "income_loss_before_income_taxes", "other"]}}}
+      ]
+    },
+    "taxItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["income_tax_expense_benefit", "equity_in_earnings_of_unconsolidated_entities", "income_loss_from_continuing_operations", "other"]}}}
+      ]
+    },
+    "discontinuedItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["income_loss_from_discontinued_operations_net_of_tax", "disposal_gain_loss_from_discontinued_operations_net_of_tax", "other"]}}}
+      ]
+    },
+    "attributionItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["net_income_loss", "net_income_attributable_to_non_controlling_interests", "net_income_attributable_to_controlling_interest", "comprehensive_income", "comprehensive_income_attributable_to_non_controlling_interests", "comprehensive_income_attributable_to_controlling_interest", "other"]}}}
+      ]
+    },
+    "ociItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["foreign_currency_translation_adjustment", "unrealised_gain_loss_on_available_for_sale_debt_securities", "pension_and_postretirement_adjustment", "cash_flow_hedge_adjustment", "own_credit_adjustment", "reclassification_adjustments", "income_tax_effect_on_oci", "other_comprehensive_income", "other"]}}}
+      ]
+    },
+    "epsItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["basic_eps_continuing_operations", "diluted_eps_continuing_operations", "basic_eps_discontinued_operations", "diluted_eps_discontinued_operations", "basic_eps_net_income", "diluted_eps_net_income", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-sources": [
+    "https://www.fasb.org/standards",
+    "https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.5-03"
+  ]
+}

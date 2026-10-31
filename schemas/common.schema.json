@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/common.schema.json",
+  "title": "Common financial statement definitions",
+  "description": "Shared identity, provenance, amount, and indicator definitions used by every accounting-standard profile.",
+  "$defs": {
+    "schemaMetadata": {
+      "type": "object",
+      "required": [
+        "profile",
+        "standard",
+        "presentation_standard",
+        "statement_type",
+        "statement_scope",
+        "monetary_unit",
+        "amount_scale"
+      ],
+      "properties": {
+        "profile": {"type": "string", "minLength": 1},
+        "standard": {"type": "string", "minLength": 1},
+        "presentation_standard": {"type": "string", "minLength": 1},
+        "statement_type": {
+          "enum": ["balance_sheet", "income_statement", "cash_flow_statement"]
+        },
+        "statement_scope": {"enum": ["consolidated", "separate"]},
+        "jurisdiction": {"type": "string", "minLength": 1},
+        "effective_for_periods_beginning_on_or_after": {
+          "type": "string",
+          "format": "date"
+        },
+        "monetary_unit": {"type": "string", "minLength": 1},
+        "amount_scale": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "operating_cash_flow_method": {
+          "enum": ["direct", "indirect", "not_applicable"]
+        },
+        "presentation_basis": {
+          "enum": ["current_non_current", "liquidity", "mixed", "not_applicable"]
+        },
+        "expense_analysis": {
+          "enum": ["function", "nature", "mixed", "not_applicable"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceMetadata": {
+      "type": "object",
+      "required": ["statement", "report", "url"],
+      "properties": {
+        "statement": {"type": "string", "minLength": 1},
+        "as_of": {"type": "string", "format": "date"},
+        "period_start": {"type": "string", "format": "date"},
+        "period_end": {"type": "string", "format": "date"},
+        "basis": {"type": "string", "minLength": 1},
+        "report": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "format": "uri"},
+        "page": {"type": ["integer", "string"], "minLength": 1},
+        "taxonomy_element": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "amount": {
+      "description": "A signed monetary amount expressed in the root currency and amount scale. Decimal strings preserve exact source precision.",
+      "oneOf": [
+        {"type": "number"},
+        {"type": "string", "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"}
+      ]
+    },
+    "lineItem": {
+      "type": "object",
+      "required": ["name", "amount", "source_field", "description"],
+      "properties": {
+        "canonical_field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Normalized indicator identifier. Use other for an unmatched company-specific line."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable display name for the normalized or company-specific indicator."
+        },
+        "amount": {"$ref": "#/$defs/amount"},
+        "source_field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact caption used in the filed source statement, preserving its language and punctuation."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explanation of the source caption, its accounting meaning, and any mapping judgment."
+        },
+        "source_reference": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional page, note, XBRL concept, or other precise source locator."
+        },
+        "is_deduction": {
+          "type": "boolean",
+          "default": false,
+          "description": "True when a positive source amount must be subtracted from the containing subtotal."
+        },
+        "is_subtotal": {
+          "type": "boolean",
+          "default": false,
+          "description": "True for a reported subtotal. Subtotals must not be summed again as components."
+        },
+        "cash_flow_direction": {
+          "enum": ["inflow", "outflow", "net", "not_applicable"]
+        },
+        "is_non_cash": {"type": "boolean", "default": false}
+      },
+      "additionalProperties": false
+    },
+    "statementIdentity": {
+      "type": "object",
+      "required": ["company", "reporting_period", "currency", "schema", "source"],
+      "properties": {
+        "company": {"type": "string", "minLength": 1},
+        "ticker": {"type": "string", "minLength": 1},
+        "reporting_period": {"type": "string", "minLength": 1},
+        "currency": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/cas/balance-sheet.schema.json",
+  "title": "CAS 2019 consolidated balance sheet",
+  "description": "Balance-sheet input aligned with the Chinese Ministry of Finance 2019 consolidated financial statement format, 会合01表.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "assets", "liabilities", "equity"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["presentation_basis"], "properties": {"profile": {"const": "CAS_2019"}, "statement_type": {"const": "balance_sheet"}, "presentation_basis": {"const": "current_non_current"}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "assets": {
+      "type": "object",
+      "required": ["current", "non_current"],
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/currentAsset"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/nonCurrentAsset"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "liabilities": {
+      "type": "object",
+      "required": ["current", "non_current"],
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/currentLiability"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/nonCurrentLiability"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "equity": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {"type": "array", "items": {"$ref": "#/$defs/equityItem"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "reported_total_liabilities_and_equity": {"$ref": "#/$defs/totalItem"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "currentAsset": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_and_cash_equivalents", "settlement_reserve", "funds_lent", "trading_financial_assets", "derivative_financial_assets", "notes_receivable", "accounts_receivable", "receivables_financing", "prepayments", "insurance_premium_receivable", "reinsurance_accounts_receivable", "reinsurance_contract_reserve_receivable", "other_receivables", "reverse_repurchase_financial_assets", "inventory", "contract_assets", "assets_held_for_sale", "non_current_assets_due_within_one_year", "other_current_assets", "other"]}}}
+      ]
+    },
+    "nonCurrentAsset": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["loans_and_advances_to_customers", "debt_investments", "other_debt_investments", "long_term_receivables", "long_term_equity_investments", "other_equity_instrument_investments", "other_non_current_financial_assets", "investment_property", "fixed_assets", "construction_in_progress", "productive_biological_assets", "oil_and_gas_assets", "right_of_use_assets", "intangible_assets", "development_expenditure", "goodwill", "long_term_deferred_expenses", "deferred_tax_assets", "other_non_current_assets", "other"]}}}
+      ]
+    },
+    "currentLiability": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["short_term_borrowings", "borrowings_from_central_bank", "funds_borrowed", "trading_financial_liabilities", "derivative_financial_liabilities", "notes_payable", "accounts_payable", "advances_from_customers", "contract_liabilities", "financial_assets_sold_under_repurchase_agreements", "customer_and_interbank_deposits", "agency_trading_securities", "agency_underwriting_securities", "employee_benefits_payable", "taxes_and_levies_payable", "other_payables", "fees_and_commissions_payable", "reinsurance_accounts_payable", "liabilities_held_for_sale", "non_current_liabilities_due_within_one_year", "other_current_liabilities", "other"]}}}
+      ]
+    },
+    "nonCurrentLiability": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["insurance_contract_reserves", "long_term_borrowings", "bonds_payable", "preferred_shares_debt_component", "perpetual_bonds_debt_component", "lease_liabilities", "long_term_payables", "provisions", "deferred_income", "deferred_tax_liabilities", "other_non_current_liabilities", "other"]}}}
+      ]
+    },
+    "equityItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["share_capital", "other_equity_instruments", "preferred_shares_equity_component", "perpetual_bonds_equity_component", "other_equity_instruments_other", "capital_reserve", "treasury_shares", "other_comprehensive_income", "special_reserve", "surplus_reserve", "general_risk_reserve", "retained_earnings", "equity_attributable_to_owners_of_parent", "non_controlling_interests", "other"]}}}
+      ]
+    },
+    "totalItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"required": ["is_subtotal"], "properties": {"is_subtotal": {"const": true}}}
+      ]
+    }
+  },
+  "x-standard-source": "https://www.mof.gov.cn/gkml/caizhengwengao/wg201901/wg201909/202005/P020200507337626447186.pdf"
+}

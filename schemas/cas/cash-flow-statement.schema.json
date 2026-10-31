@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/cas/cash-flow-statement.schema.json",
+  "title": "CAS 2019 consolidated statement of cash flows",
+  "description": "Cash-flow input aligned with the Chinese Ministry of Finance 2019 consolidated financial statement format, 会合03表.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "operating_activities", "investing_activities", "financing_activities", "reconciliation"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["operating_cash_flow_method"], "properties": {"profile": {"const": "CAS_2019"}, "statement_type": {"const": "cash_flow_statement"}, "operating_cash_flow_method": {"const": "direct"}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "operating_activities": {"type": "array", "items": {"$ref": "#/$defs/operatingItem"}},
+    "investing_activities": {"type": "array", "items": {"$ref": "#/$defs/investingItem"}},
+    "financing_activities": {"type": "array", "items": {"$ref": "#/$defs/financingItem"}},
+    "reconciliation": {"type": "array", "items": {"$ref": "#/$defs/reconciliationItem"}},
+    "non_cash_transactions": {"type": "array", "items": {"$ref": "../common.schema.json#/$defs/lineItem"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "operatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_received_from_sales_and_services", "net_increase_in_customer_and_interbank_deposits", "net_increase_in_central_bank_borrowings", "net_increase_in_borrowings_from_other_financial_institutions", "cash_received_from_original_insurance_premiums", "net_cash_received_from_reinsurance", "net_increase_in_policyholder_deposits_and_investments", "cash_received_from_interest_fees_and_commissions", "net_increase_in_funds_borrowed", "net_increase_in_repurchase_funds", "net_cash_received_from_agency_securities_trading", "tax_refunds_received", "other_operating_cash_received", "total_operating_cash_inflows", "cash_paid_for_goods_and_services", "net_increase_in_customer_loans_and_advances", "net_increase_in_central_bank_and_interbank_deposits", "cash_paid_for_original_insurance_claims", "net_increase_in_funds_lent", "cash_paid_for_interest_fees_and_commissions", "cash_paid_for_policyholder_dividends", "cash_paid_to_and_for_employees", "taxes_paid", "other_operating_cash_paid", "total_operating_cash_outflows", "net_cash_from_operating_activities", "other"]}}}
+      ]
+    },
+    "investingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_received_from_recovery_of_investments", "investment_income_received", "cash_received_from_disposal_of_long_term_assets", "net_cash_received_from_disposal_of_subsidiaries", "other_investing_cash_received", "total_investing_cash_inflows", "cash_paid_to_acquire_long_term_assets", "cash_paid_for_investments", "net_increase_in_pledged_loans", "net_cash_paid_to_acquire_subsidiaries", "other_investing_cash_paid", "total_investing_cash_outflows", "net_cash_from_investing_activities", "other"]}}}
+      ]
+    },
+    "financingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_received_from_capital_contributions", "cash_received_from_non_controlling_shareholder_contributions", "cash_received_from_borrowings", "other_financing_cash_received", "total_financing_cash_inflows", "cash_paid_for_debt_repayment", "cash_paid_for_dividends_profit_distributions_and_interest", "cash_paid_for_dividends_to_non_controlling_interests", "other_financing_cash_paid", "total_financing_cash_outflows", "net_cash_from_financing_activities", "other"]}}}
+      ]
+    },
+    "reconciliationItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["effect_of_exchange_rate_changes", "net_increase_in_cash_and_cash_equivalents", "opening_cash_and_cash_equivalents", "closing_cash_and_cash_equivalents", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-source": "https://www.mof.gov.cn/gkml/caizhengwengao/wg201901/wg201909/202005/P020200507337626447186.pdf"
+}

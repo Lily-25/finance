@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/ifrs-eu/income-statement.schema.json",
+  "title": "IFRS/EU statement of profit or loss and other comprehensive income",
+  "description": "IFRS income-statement input supporting IAS 1 presentation and the IFRS 18 categories and defined subtotals effective from 2027. State the applied standard and EU endorsement basis in metadata.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "profit_or_loss", "attribution", "other_comprehensive_income"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["expense_analysis"], "properties": {"profile": {"const": "IFRS_EU"}, "statement_type": {"const": "income_statement"}, "expense_analysis": {"enum": ["function", "nature", "mixed"]}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "profit_or_loss": {"type": "array", "items": {"$ref": "#/$defs/profitItem"}},
+    "attribution": {"type": "array", "items": {"$ref": "#/$defs/attributionItem"}},
+    "other_comprehensive_income": {"type": "array", "items": {"$ref": "#/$defs/ociItem"}},
+    "earnings_per_share": {"type": "array", "items": {"$ref": "#/$defs/epsItem"}},
+    "management_defined_performance_measures": {"type": "array", "items": {"$ref": "../common.schema.json#/$defs/lineItem"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "profitItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["revenue", "interest_revenue_effective_interest_method", "insurance_revenue", "derecognition_gain_loss_on_amortised_cost_financial_assets", "insurance_service_expenses", "income_expense_from_reinsurance_contracts", "cost_of_sales", "employee_benefits_expense", "depreciation_and_amortisation", "other_operating_expenses", "impairment_gain_loss_under_ifrs_9", "operating_profit_loss", "share_of_profit_loss_of_equity_method_investments", "investing_category_income", "investing_category_expenses", "profit_loss_before_financing_and_income_taxes", "finance_income", "finance_expenses", "insurance_finance_income_expense", "reinsurance_finance_income_expense", "profit_loss_before_tax", "income_tax_expense", "profit_loss_from_continuing_operations", "profit_loss_from_discontinued_operations", "profit_loss", "other"]}}}
+      ]
+    },
+    "attributionItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["profit_loss_attributable_to_owners_of_parent", "profit_loss_attributable_to_non_controlling_interests", "comprehensive_income_attributable_to_owners_of_parent", "comprehensive_income_attributable_to_non_controlling_interests", "other"]}}}
+      ]
+    },
+    "ociItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["oci_not_reclassifiable_to_profit_or_loss", "remeasurement_of_defined_benefit_plans", "equity_method_oci_not_reclassifiable", "fair_value_change_of_equity_instruments_at_fvoci", "own_credit_risk_fair_value_change", "oci_reclassifiable_to_profit_or_loss", "foreign_currency_translation_differences", "cash_flow_hedge_reserve", "cost_of_hedging_reserve", "fair_value_change_of_debt_instruments_at_fvoci", "equity_method_oci_reclassifiable", "income_tax_relating_to_oci", "other_comprehensive_income_net_of_tax", "total_comprehensive_income", "other"]}}}
+      ]
+    },
+    "epsItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["basic_earnings_per_share_continuing_operations", "diluted_earnings_per_share_continuing_operations", "basic_earnings_per_share", "diluted_earnings_per_share", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-sources": [
+    "https://www.ifrs.org/issued-standards/list-of-standards/ias-1-presentation-of-financial-statements.html/",
+    "https://www.ifrs.org/issued-standards/list-of-standards/ifrs-18-presentation-and-disclosure-in-financial-statements/"
+  ]
+}

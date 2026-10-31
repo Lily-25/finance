@@ -1,0 +1,223 @@
+@startuml DomainLayerClasses
+
+title Financial Position Report Generator - Domain Layer Classes
+top to bottom direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+package "Domain Models\nasset_report.domain.models" #E3F0F8 {
+  class Money <<frozen value object>> {
+    + amount: Decimal
+    + {static} from_value(value: object): Money
+    + {static} zero(): Money
+    + __add__(other: Money): Money
+  }
+
+  class SignedMoney <<frozen value object>> {
+    + amount: Decimal
+    + {static} from_value(value: object): SignedMoney
+    + {static} zero(): SignedMoney
+    + __add__(other: SignedMoney): SignedMoney
+  }
+
+  class IndicatorMetadata <<frozen value object>> {
+    + field_name: str
+    + source_field: str
+    + description: str
+  }
+
+  class ReportingPeriod <<frozen value object>> {
+    + label: str
+  }
+
+  class Company <<frozen entity>> {
+    + name: str
+    + ticker: str [0..1]
+    + currency: str
+    + reporting_period: ReportingPeriod
+  }
+
+  class AssetItem <<frozen entity>> {
+    + name: str
+    + amount: Money
+    + source_field: str
+    + description: str
+  }
+
+  class AssetStatement <<frozen entity>> {
+    + cash_and_cash_equivalents: Money = 0
+    + trading_financial_assets: Money = 0
+    + notes_receivable: Money = 0
+    + accounts_receivable: Money = 0
+    + receivables_financing: Money = 0
+    + prepayments: Money = 0
+    + other_receivables: Money = 0
+    + inventory: Money = 0
+    + non_current_assets_due_within_one_year: Money = 0
+    + other_current_assets: Money = 0
+    -- non-current assets --
+    + long_term_investments: Money = 0
+    + debt_investments: Money = 0
+    + equity_investments: Money = 0
+    + fixed_assets: Money = 0
+    + construction_in_progress: Money = 0
+    + right_of_use_assets: Money = 0
+    + intangible_assets: Money = 0
+    + development_expenditure: Money = 0
+    + goodwill: Money = 0
+    + deferred_tax_assets: Money = 0
+    + other_non_current_assets: Money = 0
+    -- calculated --
+    + total_current_assets: Money {property}
+    + total_non_current_assets: Money {property}
+    + total_assets: Money {property}
+    + component_percentages: dict(str, Decimal) {property}
+    + percentage_of_total(component: str): Decimal
+    + {static} create(current_assets, non_current_assets): AssetStatement
+  }
+
+  class LiabilityItem <<frozen entity>> {
+    + name: str
+    + amount: Money
+    + source_field: str
+    + description: str
+  }
+
+  class LiabilityStatement <<frozen entity>> {
+    + accounts_payable: Money = 0
+    + short_term_debt: Money = 0
+    + notes_payable: Money = 0
+    + accrued_expenses: Money = 0
+    + taxes_payable: Money = 0
+    + deferred_revenue: Money = 0
+    + payroll_payable: Money = 0
+    + non_current_liabilities_due_within_one_year: Money = 0
+    + other_current_liabilities: Money = 0
+    -- non-current liabilities --
+    + long_term_debt: Money = 0
+    + lease_liabilities: Money = 0
+    + deferred_tax_liabilities: Money = 0
+    + pension_liabilities: Money = 0
+    + provisions: Money = 0
+    + deferred_income: Money = 0
+    + other_non_current_liabilities: Money = 0
+    -- calculated --
+    + total_current_liabilities: Money {property}
+    + total_non_current_liabilities: Money {property}
+    + total_liabilities: Money {property}
+    + component_percentages: dict(str, Decimal) {property}
+    + percentage_of_total(component: str): Decimal
+    + {static} create(current_liabilities, non_current_liabilities): LiabilityStatement
+  }
+
+  class EquityItem <<frozen entity>> {
+    + name: str
+    + amount: SignedMoney
+    + source_field: str
+    + description: str
+    + is_deduction: bool
+  }
+
+  class EquityStatement <<frozen entity>> {
+    + share_capital: SignedMoney = 0
+    + other_equity_instruments: SignedMoney = 0
+    + capital_reserve: SignedMoney = 0
+    + treasury_shares: SignedMoney = 0
+    + other_comprehensive_income: SignedMoney = 0
+    + special_reserve: SignedMoney = 0
+    + surplus_reserve: SignedMoney = 0
+    + general_risk_reserve: SignedMoney = 0
+    + retained_earnings: SignedMoney = 0
+    + non_controlling_interests: SignedMoney = 0
+    + equity_items: tuple(EquityItem) {property}
+    + parent_equity: SignedMoney {property}
+    + total_equity: SignedMoney {property}
+    + component_percentages: dict(str, Decimal) {property}
+    + percentage_of_total(component: str): Decimal
+    + {static} create(items): EquityStatement
+  }
+
+  class FinancialStatementData <<frozen aggregate>> {
+    + company: Company
+    + assets: AssetStatement
+    + liabilities: LiabilityStatement
+    + equity: EquityStatement
+    + statement: AssetStatement {property}
+    + balance_difference: Decimal {property}
+    + is_balanced: bool {property}
+    + currency: str {property}
+    + reporting_period: ReportingPeriod {property}
+  }
+
+  class FinancialTimeSeriesData <<frozen aggregate>> {
+    + company: Company
+    + statements: tuple(FinancialStatementData)
+    + start_period: ReportingPeriod {property}
+    + end_period: ReportingPeriod {property}
+    + time_frame: str {property}
+    + currency: str {property}
+  }
+}
+
+package "Repository Contracts\nasset_report.domain.repositories" #EAF4FA {
+  interface FinancialStatementRepository <<Protocol>> {
+    + load(): FinancialStatementData or FinancialTimeSeriesData
+  }
+}
+
+Company *-- "1" ReportingPeriod
+FinancialStatementData *-- "1" Company
+FinancialStatementData *-- "1" AssetStatement
+FinancialStatementData *-- "1" LiabilityStatement
+FinancialStatementData *-- "1" EquityStatement
+FinancialTimeSeriesData *-- "1" Company
+FinancialTimeSeriesData *-- "1..*" FinancialStatementData
+AssetStatement *-- "21" Money : standard line items
+AssetStatement *-- "0..*" AssetItem : additional lines
+AssetItem *-- "1" Money
+AssetStatement *-- "0..*" IndicatorMetadata : source mapping
+LiabilityStatement *-- "16" Money : standard line items
+LiabilityStatement *-- "0..*" LiabilityItem : additional lines
+LiabilityItem *-- "1" Money
+LiabilityStatement *-- "0..*" IndicatorMetadata : source mapping
+EquityStatement *-- "10" SignedMoney : standard line items
+EquityStatement *-- "0..*" EquityItem : additional lines
+EquityStatement *-- "0..*" IndicatorMetadata : source mapping
+EquityItem *-- "1" SignedMoney
+FinancialStatementRepository ..> FinancialStatementData : returns
+FinancialStatementRepository ..> FinancialTimeSeriesData : returns
+
+note right of AssetStatement
+  Every standard line item defaults to Money.zero().
+  Existing list input is mapped to named fields.
+  Unknown line items are preserved as additional items.
+end note
+
+note right of LiabilityStatement
+  Every standard line item defaults to Money.zero().
+  Totals and percentages are safe when all values are zero.
+end note
+
+note right of EquityStatement
+  Equity components may be signed.
+  Treasury shares are stored as a deduction.
+  Source captions map by name or source_field;
+  unknown rows are preserved as additional items.
+end note
+
+note left of FinancialStatementData
+  Checks assets = liabilities + equity
+  with a tolerance of 0.01.
+end note
+
+note right of FinancialTimeSeriesData
+  Contains one or more periods.
+  Period labels are unique and chronological.
+  All statements share company, ticker, and currency.
+end note
+
+@enduml

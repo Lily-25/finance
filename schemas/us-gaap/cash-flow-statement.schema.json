@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/us-gaap/cash-flow-statement.schema.json",
+  "title": "US GAAP/SEC statement of cash flows",
+  "description": "Cash-flow input aligned with FASB ASC Topic 230 and SEC reporting requirements, supporting direct or indirect operating presentation.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "operating_activities", "investing_activities", "financing_activities", "reconciliation"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["operating_cash_flow_method"], "properties": {"profile": {"const": "US_GAAP_SEC"}, "statement_type": {"const": "cash_flow_statement"}, "operating_cash_flow_method": {"enum": ["direct", "indirect"]}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "operating_activities": {"type": "array", "items": {"$ref": "#/$defs/operatingItem"}},
+    "investing_activities": {"type": "array", "items": {"$ref": "#/$defs/investingItem"}},
+    "financing_activities": {"type": "array", "items": {"$ref": "#/$defs/financingItem"}},
+    "reconciliation": {"type": "array", "items": {"$ref": "#/$defs/reconciliationItem"}},
+    "supplemental_disclosures": {"type": "array", "items": {"$ref": "#/$defs/supplementalItem"}},
+    "non_cash_investing_and_financing": {"type": "array", "items": {"$ref": "../common.schema.json#/$defs/lineItem"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "operatingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_collected_from_customers", "interest_and_dividends_received", "other_operating_cash_receipts", "cash_paid_to_suppliers_and_employees", "interest_paid", "income_taxes_paid", "other_operating_cash_payments", "net_income_starting_point", "depreciation_depletion_and_amortisation", "deferred_income_taxes", "share_based_compensation", "impairment_charges", "gain_loss_on_disposals", "equity_method_earnings", "distributions_from_equity_method_investees", "change_in_accounts_receivable", "change_in_inventories", "change_in_prepaid_expenses_and_other_assets", "change_in_accounts_payable", "change_in_accrued_liabilities", "change_in_contract_assets_and_liabilities", "other_operating_adjustments", "net_cash_from_operating_activities", "other"]}}}
+      ]
+    },
+    "investingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["capital_expenditures", "proceeds_from_disposal_of_property_plant_and_equipment", "acquisitions_of_businesses_net_of_cash_acquired", "proceeds_from_disposals_of_businesses_net_of_cash_disposed", "purchases_of_debt_and_equity_securities", "proceeds_from_sales_of_debt_and_equity_securities", "proceeds_from_maturities_of_debt_securities", "loans_made", "collections_of_loans", "other_investing_cash_flows", "net_cash_from_investing_activities", "other"]}}}
+      ]
+    },
+    "financingItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["proceeds_from_short_term_borrowings", "repayments_of_short_term_borrowings", "proceeds_from_long_term_debt", "repayments_of_long_term_debt", "proceeds_from_issuance_of_common_stock", "proceeds_from_issuance_of_preferred_stock", "repurchases_of_common_stock", "redemptions_of_preferred_stock", "dividends_paid", "debt_issuance_costs_paid", "payments_of_finance_lease_liabilities", "changes_in_ownership_interests_without_loss_of_control", "other_financing_cash_flows", "net_cash_from_financing_activities", "other"]}}}
+      ]
+    },
+    "reconciliationItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["effect_of_exchange_rate_changes", "net_increase_decrease_in_cash_cash_equivalents_and_restricted_cash", "opening_cash_cash_equivalents_and_restricted_cash", "closing_cash_cash_equivalents_and_restricted_cash", "cash_and_cash_equivalents", "restricted_cash_current", "restricted_cash_non_current", "other"]}}}
+      ]
+    },
+    "supplementalItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_paid_for_interest", "cash_paid_for_income_taxes", "cash_refund_for_income_taxes", "other"]}}}
+      ]
+    }
+  },
+  "x-standard-sources": [
+    "https://www.fasb.org/standards",
+    "https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.3-02"
+  ]
+}

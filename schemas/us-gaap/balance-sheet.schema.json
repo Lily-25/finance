@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.asset-report.local/us-gaap/balance-sheet.schema.json",
+  "title": "US GAAP/SEC balance sheet",
+  "description": "Balance-sheet input aligned with FASB ASC Topic 210 and SEC Regulation S-X Article 5 for commercial and industrial registrants.",
+  "type": "object",
+  "required": ["company", "reporting_period", "currency", "schema", "source", "assets", "liabilities", "equity"],
+  "properties": {
+    "company": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "minLength": 1},
+    "reporting_period": {"type": "string", "minLength": 1},
+    "currency": {"type": "string", "minLength": 1},
+    "schema": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/schemaMetadata"},
+        {"required": ["presentation_basis"], "properties": {"profile": {"const": "US_GAAP_SEC"}, "statement_type": {"const": "balance_sheet"}, "presentation_basis": {"const": "current_non_current"}}}
+      ]
+    },
+    "source": {"$ref": "../common.schema.json#/$defs/sourceMetadata"},
+    "assets": {
+      "type": "object",
+      "required": ["current", "non_current"],
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/currentAsset"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/nonCurrentAsset"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "liabilities": {
+      "type": "object",
+      "required": ["current", "non_current"],
+      "properties": {
+        "current": {"type": "array", "items": {"$ref": "#/$defs/currentLiability"}},
+        "non_current": {"type": "array", "items": {"$ref": "#/$defs/nonCurrentLiability"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "temporary_equity": {
+      "type": "array",
+      "description": "Redeemable securities classified outside permanent stockholders' equity under SEC presentation rules.",
+      "items": {"$ref": "#/$defs/temporaryEquityItem"}
+    },
+    "equity": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {"type": "array", "items": {"$ref": "#/$defs/equityItem"}},
+        "reported_total": {"$ref": "#/$defs/totalItem"}
+      },
+      "additionalProperties": false
+    },
+    "reported_total_liabilities_and_equity": {"$ref": "#/$defs/totalItem"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "currentAsset": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["cash_and_cash_items", "restricted_cash_current", "marketable_securities_current", "accounts_receivable_trade", "accounts_receivable_related_parties", "accounts_receivable_other", "notes_receivable", "allowance_for_credit_losses", "unearned_income_receivable_deduction", "inventories", "prepaid_expenses", "contract_assets", "current_tax_assets", "other_current_assets", "other"]}}}
+      ]
+    },
+    "nonCurrentAsset": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["securities_of_related_parties", "related_party_receivables_non_current", "other_investments", "marketable_securities_non_current", "property_plant_and_equipment_gross", "accumulated_depreciation_depletion_and_amortisation", "property_plant_and_equipment_net", "operating_lease_right_of_use_assets", "finance_lease_right_of_use_assets", "goodwill", "intangible_assets_gross", "accumulated_amortisation_intangible_assets", "intangible_assets_net", "deferred_tax_assets", "other_non_current_assets", "other"]}}}
+      ]
+    },
+    "currentLiability": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["accounts_payable_trade", "accounts_payable_related_parties", "notes_payable", "short_term_bank_borrowings", "commercial_paper", "other_short_term_borrowings", "current_portion_of_long_term_debt", "current_operating_lease_liabilities", "current_finance_lease_liabilities", "accrued_payroll", "accrued_interest", "income_taxes_payable", "contract_liabilities_current", "other_current_liabilities", "other"]}}}
+      ]
+    },
+    "nonCurrentLiability": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["bonds_payable", "mortgages_payable", "other_long_term_debt", "indebtedness_to_related_parties_non_current", "operating_lease_liabilities_non_current", "finance_lease_liabilities_non_current", "pension_liabilities", "other_postretirement_benefit_liabilities", "deferred_tax_liabilities", "deferred_income", "asset_retirement_obligations", "other_non_current_liabilities", "other"]}}}
+      ]
+    },
+    "temporaryEquityItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["redeemable_preferred_stock", "redeemable_non_controlling_interests", "other_redeemable_securities", "other"]}}}
+      ]
+    },
+    "equityItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"properties": {"canonical_field": {"enum": ["non_redeemable_preferred_stock", "common_stock", "additional_paid_in_capital", "other_additional_capital", "retained_earnings", "accumulated_deficit", "accumulated_other_comprehensive_income", "treasury_stock", "equity_attributable_to_parent", "non_controlling_interests", "other"]}}}
+      ]
+    },
+    "totalItem": {
+      "allOf": [
+        {"$ref": "../common.schema.json#/$defs/lineItem"},
+        {"required": ["is_subtotal"], "properties": {"is_subtotal": {"const": true}}}
+      ]
+    }
+  },
+  "x-standard-sources": [
+    "https://www.fasb.org/standards",
+    "https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.5-02"
+  ]
+}

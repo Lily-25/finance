@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "json_schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+  "common_definitions": "common.schema.json",
+  "profiles": [
+    {
+      "profile": "CAS_2019",
+      "standard": "Chinese Accounting Standards for Business Enterprises",
+      "jurisdiction": "China",
+      "schemas": {
+        "balance_sheet": "cas/balance-sheet.schema.json",
+        "income_statement": "cas/income-statement.schema.json",
+        "cash_flow_statement": "cas/cash-flow-statement.schema.json"
+      }
+    },
+    {
+      "profile": "IFRS_EU",
+      "standard": "IFRS Accounting Standards as adopted by the European Union",
+      "jurisdiction": "European Union",
+      "schemas": {
+        "balance_sheet": "ifrs-eu/balance-sheet.schema.json",
+        "income_statement": "ifrs-eu/income-statement.schema.json",
+        "cash_flow_statement": "ifrs-eu/cash-flow-statement.schema.json"
+      }
+    },
+    {
+      "profile": "US_GAAP_SEC",
+      "standard": "US GAAP with SEC Regulation S-X presentation",
+      "jurisdiction": "United States",
+      "schemas": {
+        "balance_sheet": "us-gaap/balance-sheet.schema.json",
+        "income_statement": "us-gaap/income-statement.schema.json",
+        "cash_flow_statement": "us-gaap/cash-flow-statement.schema.json"
+      }
+    }
+  ]
+}
