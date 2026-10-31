@@ -10,17 +10,18 @@ import unittest
 from decimal import Decimal
 from pathlib import Path
 
-from asset_report.application.app import FinancialAnalysisApp
-from asset_report.business.analysis import (
+
+from asset_report_project.asset_report.application.app import FinancialAnalysisApp
+from asset_report_project.asset_report.business.analysis import (
     AssetAnalysisService,
     MetricsCalculator,
     TimeFrameAnalysisResult,
 )
-from asset_report.data_access.json_repository import (
+from asset_report_project.asset_report.data_access.json_repository import (
     DataValidationError,
     JSONFinancialStatementRepository,
 )
-from asset_report.domain.models import (
+from asset_report_project.asset_report.domain.models import (
     AssetItem,
     AssetReportData,
     AssetStatement,
@@ -31,9 +32,9 @@ from asset_report.domain.models import (
     Money,
     ReportingPeriod,
 )
-from asset_report.output.charts import AssetCharts
-from asset_report.output.reporting import NarrativeGenerator, ReportBuilder, ReportFileExporter
-from asset_report.presentation.cli import main
+from asset_report_project.asset_report.output.charts import AssetCharts
+from asset_report_project.asset_report.output.reporting import NarrativeGenerator, ReportBuilder, ReportFileExporter
+from asset_report_project.asset_report.presentation.cli import main
 
 
 def valid_payload() -> dict[str, object]:
