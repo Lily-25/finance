@@ -196,7 +196,7 @@ from asset_report import FinancialAnalysisApp
 result = FinancialAnalysisApp().retrieve_three_statements(
     "sample_data/three_statements",
     "output/my-normalized-run",
-    company="Example Manufacturing Co., Ltd.",
+    company="Gotion High-Tech Co., Ltd.",
     start_period="2024",
     end_period="2025",
     schema_profile="CAS_2019",

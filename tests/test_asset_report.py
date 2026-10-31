@@ -797,7 +797,7 @@ class ThreeStatementWorkflowTests(unittest.TestCase):
             result = FinancialAnalysisApp().retrieve_three_statements(
                 self.source_directory,
                 temporary,
-                company="Example Manufacturing Co., Ltd.",
+                company="Gotion High-Tech Co., Ltd.",
                 start_period="2024",
                 end_period="2025",
                 schema_profile="CAS_2019",
@@ -815,7 +815,7 @@ class ThreeStatementWorkflowTests(unittest.TestCase):
 
     def test_retrieval_reports_an_incomplete_time_frame(self) -> None:
         query = StatementQuery(
-            company="Example Manufacturing Co., Ltd.",
+            company="Gotion High-Tech Co., Ltd.",
             start_period="2024",
             end_period="2026",
             schema_profile="CAS_2019",
@@ -873,7 +873,7 @@ class WebUITests(unittest.TestCase):
 
         payload = {
             "action": "normalize_statements",
-            "company": "Example Manufacturing Co., Ltd.",
+            "company": "Gotion High-Tech Co., Ltd.",
             "start_period": "2024",
             "end_period": "2025",
             "schema_profile": "CAS_2019",

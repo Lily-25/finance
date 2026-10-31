@@ -82,7 +82,7 @@ PAGE = r"""<!doctype html>
       <form id="task-form">
         <div class="fields">
           <div class="wide"><label for="action">Task</label><select id="action" name="action"><option value="full_analysis">Normalize all three statements + financial-position report</option><option value="normalize_statements">Normalize all three statements</option><option value="financial_position_report">Generate financial-position report</option></select></div>
-          <div class="wide"><label for="company">Company</label><input id="company" name="company" value="Example Manufacturing Co., Ltd." required></div>
+          <div class="wide"><label for="company">Company</label><input id="company" name="company" value="Gotion High-Tech Co., Ltd." required></div>
           <div><label for="start_period">Start period</label><input id="start_period" name="start_period" value="2024" pattern="[0-9]{4}(Q[1-4])?" required></div>
           <div><label for="end_period">End period</label><input id="end_period" name="end_period" value="2025" pattern="[0-9]{4}(Q[1-4])?" required></div>
           <div class="wide"><label for="schema_profile">Accounting schema</label><select id="schema_profile" name="schema_profile"></select></div>
@@ -281,7 +281,7 @@ def make_handler(
                             for profile in catalog.profiles
                         ],
                         "default_source_directory": str(
-                            project_root / "sample_data" / "three_statements"
+                            project_root / "sample_data"
                         ),
                         "default_output_directory": str(project_root / "output"),
                     }
